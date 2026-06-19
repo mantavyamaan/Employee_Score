@@ -11,7 +11,7 @@ The final employee score is calculated by combining these normalized and weighte
 <br>
 
 
-Firslty I am defining all the mathematical concepts I will be using, the core of the model: 
+The core mathematical instruments used in the model (and why they are used) are: 
 
 ## Beta-Adjusted Confidence Interval (BCI)
 
