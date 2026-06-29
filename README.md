@@ -1,5 +1,11 @@
 # Employee Scoring Model
 
+You can acess my model here:
+
+[Employee Score Model](https://mantavyamaan.github.io/Employee_Score/employee-score-console.html)
+
+[Role Specific Employee Score Model](https://mantavyamaan.github.io/Employee_Score/role-specific-employee-score-console.html)
+
 
 ## Overview
 
