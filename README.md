@@ -1,3 +1,8 @@
+# Employee Score Model
+
+
+## Overview
+
 The Employee Score Model is a statistically driven performance evaluation framework that combines multiple normalization and scoring techniques to generate a fair, reliable, and objective assessment of employee performance. Rather than relying solely on raw metrics or subjective evaluations, the model adjusts for differences in evaluator behavior, varying data volumes, and metric distributions to ensure consistent comparisons across employees.
 
 <br>
