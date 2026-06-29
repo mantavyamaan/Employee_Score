@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Employee Performance Score Console</title>
+<style>
+  :root{
+    --bg:#0a0e17; --panel:#121826; --panel2:#0f1420; --line:#1f2937;
+    --txt:#e5edf5; --muted:#8a98ad; --dim:#5d6b80;
+    --accent:#4f8cff; --accent2:#22d3a6; --warn:#f5a524; --bad:#f04438;
+    --good:#22c55e; --grad1:#4f8cff; --grad2:#22d3a6;
+    --chip:#1a2233;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:radial-gradient(1200px 600px at 70% -10%, #16203a 0%, var(--bg) 60%);
+    color:var(--txt); font-family:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.5; padding:0 0 60px;
+  }
+  a{color:var(--accent);}
+  .wrap{max-width:1280px; margin:0 auto; padding:24px 20px;}
+  .eyebrow{letter-spacing:3px; font-size:11px; color:var(--accent2); text-transform:uppercase; font-weight:700;}
+  h1{font-size:30px; margin:4px 0 4px; font-weight:800; letter-spacing:.5px;}
+  .sub{color:var(--muted); max-width:760px; margin-bottom:18px;}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px; margin:14px 0 26px;}
+  button.tool{
+    background:var(--chip); color:var(--txt); border:1px solid var(--line);
+    padding:9px 14px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:600;
+    transition:.15s;
+  }
+  button.tool:hover{border-color:var(--accent); color:#fff; transform:translateY(-1px);}
+  .grid-top{display:grid; grid-template-columns:1.1fr 1fr; gap:18px; margin-bottom:18px;}
+  @media(max-width:900px){.grid-top{grid-template-columns:1fr;}}
+  .card{
+    background:linear-gradient(180deg,var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--line); border-radius:16px; padding:20px;
+    box-shadow:0 10px 40px rgba(0,0,0,.35);
+  }
+  .card h2{margin:0 0 4px; font-size:13px; letter-spacing:2px; text-transform:uppercase; color:var(--muted);}
+  .card .hint{color:var(--dim); font-size:12px; margin-bottom:14px;}
+  /* gauge */
+  .gauge-wrap{display:flex; flex-direction:column; align-items:center;}
+  .score-num{font-size:54px; font-weight:800; line-height:1; margin-top:6px;}
+  .score-band{font-size:14px; font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-top:6px;}
+  .scale-row{display:flex; justify-content:space-between; width:100%; color:var(--dim); font-size:11px; margin-top:8px; font-weight:600;}
+  .bands{display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:10px;}
+  .bands span{font-size:10px; padding:3px 8px; border-radius:20px; background:var(--chip); color:var(--muted);}
+  /* radar */
+  .radar-box{display:flex; gap:18px; align-items:center; flex-wrap:wrap;}
+  .legend{flex:1; min-width:180px;}
+  .legend table{width:100%; border-collapse:collapse;}
+  .legend td{padding:4px 6px; border-bottom:1px solid var(--line); font-size:12px;}
+  .legend td:last-child{text-align:right; font-weight:700; color:var(--accent2);}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;}
+  /* contribution */
+  .contrib{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+  .contrib-row{display:grid; grid-template-columns:230px 1fr 56px; align-items:center; gap:10px; font-size:12px;}
+  .bar-track{height:13px; background:#0c1220; border-radius:7px; overflow:hidden; border:1px solid var(--line);}
+  .bar-fill{height:100%; background:linear-gradient(90deg,var(--grad1),var(--grad2)); border-radius:7px; transition:width .3s;}
+  .contrib-row b{text-align:right; color:var(--txt);}
+  .contrib-row span{color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  /* gates */
+  .gates-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; margin-top:8px;}
+  .gate{
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:12px;
+    cursor:pointer; transition:.15s; position:relative;
+  }
+  .gate:hover{border-color:var(--accent);}
+  .gate .gname{font-weight:700; font-size:13px;}
+  .gate .gdesc{color:var(--dim); font-size:11px; margin:5px 0 10px; min-height:42px;}
+  .pill{font-size:10px; font-weight:800; letter-spacing:1px; padding:4px 10px; border-radius:20px;}
+  .pill.pass{background:rgba(34,197,94,.15); color:var(--good); border:1px solid rgba(34,197,94,.4);}
+  .pill.fail{background:rgba(240,68,56,.15); color:var(--bad); border:1px solid rgba(240,68,56,.4);}
+  .mod-card{display:flex; flex-direction:column; gap:8px;}
+  .mod-row{display:flex; align-items:center; gap:12px;}
+  .mod-row label{flex:1; font-size:12px; color:var(--muted);}
+  .mod-row input[type=range]{flex:1;}
+  .mod-val{width:48px; text-align:right; font-weight:700; color:var(--accent2);}
+  /* params */
+  .params{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:20px;}
+  @media(max-width:900px){.params{grid-template-columns:1fr;}}
+  .param{
+    background:linear-gradient(180deg,var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--line); border-radius:16px; padding:0; overflow:hidden;
+  }
+  .param-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; cursor:pointer; gap:10px;}
+  .param-head .ttl{font-weight:700; font-size:14px;}
+  .param-head .ttl small{display:block; color:var(--dim); font-weight:400; font-size:11px; margin-top:2px;}
+  .param-head .right{display:flex; align-items:center; gap:12px;}
+  .param-score{font-size:20px; font-weight:800; color:var(--accent2); min-width:54px; text-align:right;}
+  .param-weight{font-size:10px; color:var(--dim); letter-spacing:1px;}
+  .param-mini{width:46px; height:46px;}
+  .param-body{padding:0 18px 18px; display:none;}
+  .param.open .param-body{display:block;}
+  .caret{transition:.2s; color:var(--dim);}
+  .param.open .caret{transform:rotate(90deg);}
+  .field{display:grid; grid-template-columns:1fr 130px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line);}
+  .field:last-child{border-bottom:none;}
+  .field .lab{font-size:12px;}
+  .field .lab small{display:block; color:var(--dim); font-size:10.5px; margin-top:2px;}
+  .field input[type=number]{
+    width:100%; background:#0b1120; border:1px solid var(--line); color:var(--txt);
+    border-radius:8px; padding:7px 9px; font-size:13px; text-align:right;
+  }
+  .field input[type=range]{width:100%;}
+  .field .rngwrap{display:flex; flex-direction:column; gap:3px;}
+  .field .rngwrap b{text-align:right; font-size:12px; color:var(--accent2);}
+  .field input:focus{outline:none; border-color:var(--accent);}
+  .math{margin-top:12px; font-size:11.5px; color:var(--muted); background:#0a0f1c; border:1px solid var(--line); border-radius:10px; padding:12px; display:none;}
+  .param.showmath .math{display:block;}
+  .math code{color:var(--accent2);}
+  .math .ml{display:flex; justify-content:space-between; padding:2px 0; border-bottom:1px dashed #1a2233;}
+  .mathtoggle{font-size:11px; color:var(--accent); cursor:pointer; margin-top:10px; display:inline-block; font-weight:600;}
+  .footer-formula{margin-top:26px; text-align:center; color:var(--dim); font-size:12px;}
+  .footer-formula code{color:var(--muted);}
+  .check{display:flex; align-items:center; gap:8px;}
+  .toast{position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#10b981; color:#04130d; padding:10px 18px; border-radius:10px; font-weight:700; opacity:0; transition:.3s; pointer-events:none;}
+  .toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">EMPLOYEE PERFORMANCE INSTRUMENT</div>
+  <h1>Employee Score Console</h1>
+  <div class="sub">Adjust any input and the score recalculates instantly — same engine as the model notebook, including the Bayesian credible-interval, exponential-decay, Gaussian, log-normalisation and Huber-robust-composite helpers, aggregated through a 2-additive Choquet integral.</div>
+
+  <div class="toolbar">
+    <button class="tool" onclick="randomize()">⤬ Randomize</button>
+    <button class="tool" onclick="resetSample()">↺ Reset to sample</button>
+    <button class="tool" onclick="copySummary()">⧉ Copy summary</button>
+    <button class="tool" onclick="exportScenario()">⭳ Export scenario</button>
+    <button class="tool" onclick="importScenario()">⭱ Import scenario</button>
+  </div>
+
+  <div class="grid-top">
+    <!-- GAUGE -->
+    <div class="card gauge-wrap">
+      <h2>Final Score</h2>
+      <div class="hint">0 – 100 · gate-aware · context-scaled</div>
+      <canvas id="gauge" width="380" height="220"></canvas>
+      <div class="score-num" id="scoreNum">0</div>
+      <div class="score-band" id="scoreBand">—</div>
+      <div class="bands">
+        <span>0–40 NEEDS SUPPORT</span><span>40–60 DEVELOPING</span>
+        <span>60–75 SOLID</span><span>75–88 STRONG</span><span>88–100 EXCEPTIONAL</span>
+      </div>
+    </div>
+    <!-- RADAR -->
+    <div class="card">
+      <h2>Shape of the Performance</h2>
+      <div class="hint">Twelve-parameter profile (post-aggregation inputs)</div>
+      <div class="radar-box">
+        <canvas id="radar" width="300" height="300"></canvas>
+        <div class="legend"><table id="radarLegend"></table></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTRIBUTION -->
+  <div class="card" style="margin-bottom:18px;">
+    <h2>Score Composition — who's pulling the needle</h2>
+    <div class="hint">Choquet marginal contribution of each parameter to the final score</div>
+    <div class="contrib" id="contrib"></div>
+  </div>
+
+  <!-- GATES + MODIFIERS -->
+  <div class="grid-top">
+    <div class="card">
+      <h2>Hard Knockout Gates</h2>
+      <div class="hint">Any single trigger zeroes the final score. Click to toggle.</div>
+      <div class="gates-grid" id="gatesGrid"></div>
+    </div>
+    <div class="card">
+      <h2>Situational Modifiers — global multipliers</h2>
+      <div class="hint">Five continuous factors [M1…M5] scaling the score for data-quality &amp; evaluation context.</div>
+      <div class="mod-card" id="modCard"></div>
+    </div>
+  </div>
+
+  <!-- PARAMETERS -->
+  <div class="params" id="params"></div>
+
+  <div class="footer-formula">
+    Formula: <code>S = 100 · G · M · ( C<sub>μ</sub> / μ(N) )</code> — Choquet integral over a 2-additive fuzzy measure with synergy &amp; redundancy interactions.<br/>
+    Runs entirely in this page · nothing leaves your browser.
+  </div>
+</div>
+<div class="toast" id="toast">Copied</div>
+
+<script>
+/* ============================================================
+   MATH HELPERS  (faithful ports of the notebook)
+   ============================================================ */
+// Regularized incomplete beta -> Beta inverse CDF (ppf) via bisection.
+function logGamma(z){
+  const g=7, c=[0.99999999999980993,676.5203681218851,-1259.1392167224028,
+    771.32342877765313,-176.61502916214059,12.507343278686905,
+    -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-logGamma(1-z);
+  z-=1; let x=c[0]; for(let i=1;i<g+2;i++) x+=c[i]/(z+i);
+  const t=z+g+0.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function betacf(x,a,b){
+  const MAXIT=200, EPS=3e-12, FPMIN=1e-300;
+  let qab=a+b, qap=a+1, qam=a-1, c=1, d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN) d=FPMIN; d=1/d; let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    let m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; let del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS) break;
+  }
+  return h;
+}
+function betinc(x,a,b){ // regularized incomplete beta I_x(a,b)
+  if(x<=0) return 0; if(x>=1) return 1;
+  const bt=Math.exp(logGamma(a+b)-logGamma(a)-logGamma(b)+a*Math.log(x)+b*Math.log(1-x));
+  if(x<(a+1)/(a+b+2)) return bt*betacf(x,a,b)/a;
+  return 1-bt*betacf(1-x,b,a)/b;
+}
+function betaPPF(p,a,b){ // inverse CDF via bisection
+  if(p<=0) return 0; if(p>=1) return 1;
+  let lo=0, hi=1;
+  for(let i=0;i<100;i++){
+    const mid=(lo+hi)/2;
+    if(betinc(mid,a,b)<p) lo=mid; else hi=mid;
+  }
+  return (lo+hi)/2;
+}
+function bci(successes,trials,confidence=0.05){
+  if(trials===0) return 0.0;
+  return betaPPF(confidence, successes+1, trials-successes+1);
+}
+function edp(x,k){ return Math.exp(-k*x); }
+function lnNorm(count,cap){
+  if(cap<=0) return 0.0;
+  return Math.min(Math.log(1+count)/Math.log(1+cap),1.0);
+}
+function gaussianPenalty(actual,ideal,sigma){
+  return Math.exp(-((actual-ideal)**2)/(2*sigma*sigma));
+}
+function hrc(values,weights,delta=0.15,maxIter=100,tol=1e-6){
+  const v=values.slice(); let w=weights.slice();
+  const ws=w.reduce((a,b)=>a+b,0); w=w.map(x=>x/ws);
+  let theta=v.reduce((a,_,i)=>a+w[i]*v[i],0);
+  for(let it=0;it<maxIter;it++){
+    const aw=w.slice();
+    for(let i=0;i<v.length;i++){
+      const r=Math.abs(v[i]-theta);
+      if(r>delta) aw[i]=w[i]*(delta/r);
+    }
+    const sum=aw.reduce((a,b)=>a+b,0);
+    if(sum===0) break;
+    const thNew=v.reduce((a,_,i)=>a+aw[i]*v[i],0)/sum;
+    if(Math.abs(thNew-theta)<tol){ theta=thNew; break; }
+    theta=thNew;
+  }
+  return theta;
+}
+function clamp01(x){ return Math.max(0,Math.min(1,x)); }
+function sigmoidTransform(x,x0=0.5,k=8.0){ return 1/(1+Math.exp(-k*(x-x0))); }
+function mu(S,a,aij){
+  let val=0; for(const i of S) val+=a[i];
+  for(const key in aij){ const [i,j]=key.split(',').map(Number);
+    if(S.has(i)&&S.has(j)) val+=aij[key]; }
+  return val;
+}
+function choquet(scores,a,aij){
+  const n=scores.length;
+  const order=[...Array(n).keys()].sort((p,q)=>scores[p]-scores[q]);
+  let integral=0;
+  for(let rank=0;rank<n;rank++){
+    const coalition=new Set(order.slice(rank));
+    const muVal=mu(coalition,a,aij);
+    const delta = rank===0 ? scores[order[rank]] : scores[order[rank]]-scores[order[rank-1]];
+    integral += delta*muVal;
+  }
+  return integral;
+}
+
+/* ============================================================
+   DEFAULT DATA  (from the notebook)
+   ============================================================ */
+const SAMPLE = [
+  {tc:0.88,tvnum:52,tvbench:45,dd:0.85,tot_del:20,adraw:2.5,pr:0.90,escraw:0.08,rwraw:0.10},
+  {qa:0.82,fa:0.78,tot_sub:50,drraw:1.2,cs:0.85,dt:0.80,cr:0.65},
+  {cvsigma:0.12,dp:0.85,fs:0.90,tot_com:20,av:0.80,tot_cri:5,pmest:5.0,pmactual:6.0},
+  {tc4:0.80,cm:0.85,rsphours:3.0,cf:0.75,kn:0.70,fb:0.80,tot_han:60,blraw:0.05},
+  {incount:4,ow:0.85,ps:0.80,au:0.82,bccount:2,imp:0.70},
+  {skcount:2,pd:0.70,ad6:0.80,fp:0.75,lr:0.70,vrroles:2},
+  {ut:0.85,et:0.80,rt:0.75,tot_meet:20,mt:0.70,otratio:0.15,wmraw:0.12},
+  {ga:0.85,tot_task:50,tot_goal:5,gc:0.80,st:0.75,pv:0.78,vi:0.72},
+  {mncount:2,inf:0.70,de:0.50,dm:0.80,te:0.75,cr9:0.72},
+  {va:0.85,eth:0.90,po:0.80,evcount:3,ngcount:0,prc:0.88},
+  {at:0.95,pu:0.90,uaraw:0.05,bn:0.20,wlratio:1.15,tot_days:200,lvratio:0.07,lvtarget:0.08},
+  {csat:0.82,cfbcount:5,tot_acc:20,ret:0.85,revattributed:1100000,revtarget:1000000,nccount:1,re:0.75}
+];
+
+let data = JSON.parse(JSON.stringify(SAMPLE));
+let gates = ['f','f','f','f','f','f','f'];
+let modifiers = [1.0,1.0,1.0,0.9,1.0];
+
+/* ============================================================
+   PARAMETER ENGINE  (returns score + math lines)
+   ============================================================ */
+function computeParam(idx){
+  const p=data[idx]; let X=0; const ml=[];
+  const push=(label,val)=>ml.push([label, typeof val==='number'?val.toFixed(4):val]);
+  switch(idx){
+    case 0:{
+      const Tc=bci(p.tvnum, Math.round(p.tvnum/p.tc));
+      const Tv=Math.min(p.tvnum/p.tvbench,1.3)/1.3;
+      const Dd=bci(Math.round(p.dd*p.tot_del),p.tot_del);
+      const Ad=edp(p.adraw,0.15);
+      const Pr=bci(Math.round(p.pr*10),10);
+      const Esc=1-bci(Math.round(p.escraw*p.tvnum),p.tvnum);
+      const Rw=1-bci(Math.round(p.rwraw*p.tvnum),p.tvnum);
+      const Tcore=hrc([Tc,Dd,Ad,Pr],[0.30,0.25,0.20,0.25]);
+      const Tdrag=hrc([Esc,Rw],[0.5,0.5]);
+      X=0.60*Tcore+0.20*Tv+0.20*Tdrag;
+      push('Tc (BCI timeliness)',Tc);push('Tv (throughput)',Tv);push('Dd (deliverable)',Dd);
+      push('Ad (lateness decay)',Ad);push('Pr (hi-priority)',Pr);push('Esc drag',Esc);push('Rw drag',Rw);
+      push('T_core',Tcore);push('T_drag',Tdrag);break;
+    }
+    case 1:{
+      const Qa=p.qa;
+      const Fa=bci(Math.round(p.fa*p.tot_sub),p.tot_sub);
+      const Dr=edp(p.drraw,0.4);
+      const Qout=hrc([Qa,Fa,Dr,p.cs,p.dt],[0.25,0.20,0.20,0.15,0.20]);
+      X=0.85*Qout+0.15*p.cr;
+      push('Qa rating',Qa);push('Fa (first-pass BCI)',Fa);push('Dr (defect decay)',Dr);
+      push('Cs compliance',p.cs);push('Dt thoroughness',p.dt);push('Cr creativity',p.cr);push('Q_out',Qout);break;
+    }
+    case 2:{
+      const Cv=Math.exp(-2*Math.abs(p.cvsigma));
+      const Fs=bci(Math.round(p.fs*p.tot_com),p.tot_com);
+      const Av=bci(Math.round(p.av*p.tot_cri),p.tot_cri);
+      const Pm=1-Math.min(Math.abs(p.pmactual-p.pmest)/p.pmest,1);
+      X=hrc([Cv,p.dp,Fs,Av,Pm],[0.25,0.25,0.25,0.10,0.15]);
+      push('Cv consistency',Cv);push('Dp trust',p.dp);push('Fs follow-through',Fs);
+      push('Av availability',Av);push('Pm estimation',Pm);break;
+    }
+    case 3:{
+      const Rsp=edp(p.rsphours,0.05);
+      const Bl=1-bci(Math.round(p.blraw*p.tot_han),p.tot_han);
+      const Cpos=hrc([p.tc4,p.cm,Rsp,p.cf,p.kn,p.fb],[0.25,0.20,0.15,0.10,0.15,0.15]);
+      X=Cpos*Bl;
+      push('Tc4 team',p.tc4);push('Cm comm',p.cm);push('Rsp responsiveness',Rsp);
+      push('Cf conflict',p.cf);push('Kn knowledge',p.kn);push('Fb feedback',p.fb);
+      push('Bl (block factor)',Bl);push('C_pos',Cpos);break;
+    }
+    case 4:{
+      const In=lnNorm(p.incount,10), Bc=lnNorm(p.bccount,5);
+      X=hrc([In,p.ow,p.ps,p.au,Bc,p.imp],[0.20,0.25,0.20,0.15,0.10,0.10]);
+      push('In initiative',In);push('Ow ownership',p.ow);push('Ps problem-solve',p.ps);
+      push('Au autonomy',p.au);push('Bc cross-team',Bc);push('Imp impact',p.imp);break;
+    }
+    case 5:{
+      const Sk=lnNorm(p.skcount,5), Vr=Math.min(p.vrroles/3,1);
+      X=hrc([Sk,p.pd,p.ad6,p.fp,p.lr,Vr],[0.20,0.15,0.25,0.20,0.10,0.10]);
+      push('Sk skills',Sk);push('Pd dev',p.pd);push('Ad6 adaptability',p.ad6);
+      push('Fp feedback f/up',p.fp);push('Lr learning',p.lr);push('Vr versatility',Vr);break;
+    }
+    case 6:{
+      const Mt=bci(Math.round(p.mt*p.tot_meet),p.tot_meet);
+      const Ot=edp(Math.max(0,p.otratio-0.10),2.0);
+      const Wm=1-p.wmraw;
+      X=hrc([p.ut,p.et,p.rt,Mt,Ot,Wm],[0.25,0.25,0.15,0.10,0.15,0.10]);
+      push('Ut utilisation',p.ut);push('Et efficiency',p.et);push('Rt resource',p.rt);
+      push('Mt meetings BCI',Mt);push('Ot overtime',Ot);push('Wm waste',Wm);break;
+    }
+    case 7:{
+      const Ga=bci(Math.round(p.ga*p.tot_task),p.tot_task);
+      const Gc=bci(Math.round(p.gc*p.tot_goal),p.tot_goal);
+      X=hrc([Ga,Gc,p.st,p.pv,p.vi],[0.25,0.30,0.15,0.15,0.15]);
+      push('Ga alignment BCI',Ga);push('Gc goals BCI',Gc);push('St strategy',p.st);
+      push('Pv prioritisation',p.pv);push('Vi visible impact',p.vi);break;
+    }
+    case 8:{
+      const Mn=lnNorm(p.mncount,4);
+      X=hrc([Mn,p.inf,p.de,p.dm,p.te,p.cr9],[0.15,0.20,0.15,0.20,0.20,0.10]);
+      push('Mn mentoring',Mn);push('Inf influence',p.inf);push('De delegation',p.de);
+      push('Dm decisions',p.dm);push('Te team elevation',p.te);push('Cr9 crisis',p.cr9);break;
+    }
+    case 9:{
+      const Ev=lnNorm(p.evcount,6);
+      const Ng=Math.max(0,1-0.2*p.ngcount);
+      const Ccit=hrc([p.va,p.eth,p.po,Ev,p.prc],[0.25,0.25,0.20,0.15,0.15]);
+      X=Ng*Ccit;
+      push('Va values',p.va);push('Eth ethics',p.eth);push('Po positivity',p.po);
+      push('Ev voluntary',Ev);push('Prc conduct',p.prc);push('Ng (incident factor)',Ng);push('C_cit',Ccit);break;
+    }
+    case 10:{
+      const At=bci(Math.round(p.at*p.tot_days),p.tot_days);
+      const Pu=bci(Math.round(p.pu*p.tot_days),p.tot_days);
+      const Ua=1-bci(Math.round(p.uaraw*p.tot_days),p.tot_days);
+      const Bn=1-p.bn;
+      const Wl=gaussianPenalty(p.wlratio,1.0,0.20);
+      const Lv=gaussianPenalty(p.lvratio,p.lvtarget,0.15);
+      X=hrc([At,Pu,Ua,Bn,Wl,Lv],[0.25,0.15,0.20,0.15,0.15,0.10]);
+      push('At attendance',At);push('Pu punctuality',Pu);push('Ua absence factor',Ua);
+      push('Bn burnout inv',Bn);push('Wl workload',Wl);push('Lv leave',Lv);break;
+    }
+    case 11:{
+      const Cfb=lnNorm(p.cfbcount,10);
+      const Ret=bci(Math.round(p.ret*p.tot_acc),p.tot_acc);
+      const Rev=Math.min(p.revattributed/p.revtarget,1.2)/1.2;
+      const Nc=Math.max(0,1-0.15*p.nccount);
+      const Simp=hrc([p.csat,Cfb,Ret,Rev,p.re],[0.25,0.15,0.20,0.20,0.20]);
+      X=Nc*Simp;
+      push('Csat satisfaction',p.csat);push('Cfb feedback',Cfb);push('Ret retention',Ret);
+      push('Rev revenue',Rev);push('Re relationship',p.re);push('Nc (incident factor)',Nc);push('S_impact',Simp);break;
+    }
+  }
+  return {X:clamp01(X), ml};
+}
+
+const A_VALS={0:0.120,1:0.105,2:0.090,3:0.085,4:0.080,5:0.070,6:0.065,7:0.080,8:0.055,9:0.045,10:0.050,11:0.050};
+const A_IJ={'0,1':0.025,'0,2':0.020,'4,2':0.015,'1,6':0.015,'4,5':0.015,'7,11':0.020,'8,9':0.010,
+            '0,6':-0.010,'3,8':-0.010,'2,10':-0.010,'5,4':-0.005};
+const SIG_IDX=new Set([3,4,5,7,8,9]);
+
+function computeAll(){
+  const Xraw=[], mls=[];
+  for(let i=0;i<12;i++){ const r=computeParam(i); Xraw.push(r.X); mls.push(r.ml); }
+  const Xfinal=Xraw.map((x,i)=> clamp01(SIG_IDX.has(i)?sigmoidTransform(x):x));
+  // gates
+  let G=1; gates.forEach(g=>{ if(g==='t') G=0; });
+  // modifiers
+  let M=1; modifiers.forEach(m=>M*=m);
+  const Cmu=choquet(Xfinal,A_VALS,A_IJ);
+  const muN=mu(new Set([...Array(12).keys()]),A_VALS,A_IJ);
+  const S=100*G*M*(Cmu/muN);
+  // marginal contributions (Choquet decomposition)
+  const order=[...Array(12).keys()].sort((p,q)=>Xfinal[p]-Xfinal[q]);
+  const contrib=new Array(12).fill(0);
+  for(let rank=0;rank<12;rank++){
+    const coalition=new Set(order.slice(rank));
+    const muVal=mu(coalition,A_VALS,A_IJ);
+    const delta=rank===0?Xfinal[order[rank]]:Xfinal[order[rank]]-Xfinal[order[rank-1]];
+    const inc=delta*muVal;
+    coalition.forEach(i=>contrib[i]+=inc/coalition.size);
+  }
+  const scaledContrib=contrib.map(c=>100*G*M*(c/muN));
+  return {Xraw,Xfinal,mls,G,M,S,Cmu,muN,scaledContrib};
+}
+
+/* ============================================================
+   META / LABELS
+   ============================================================ */
+const PARAM_META=[
+  {n:'Task & Deliverable Performance', q:'Does this employee get work done, on time, and right?', w:0.120,
+   f:[['tc','On-time task rate','0–1','r'],['tvnum','Tasks completed','int','n'],['tvbench','Role benchmark','int','n'],
+      ['dd','On-time deliverable rate','0–1','r'],['tot_del','Total deliverables','int','n'],['adraw','Avg days late','≥0','n'],
+      ['pr','Hi-priority on-time','0–1','r'],['escraw','Escalation rate','0–1↓','r'],['rwraw','Rework rate','0–1↓','r']]},
+  {n:'Quality of Work', q:'How good is the output produced?', w:0.105,
+   f:[['qa','Quality rating','0–1','r'],['fa','First-pass acceptance','0–1','r'],['tot_sub','Total submissions','int','n'],
+      ['drraw','Avg defects / deliverable','≥0','n'],['cs','Standards compliance','0–1','r'],['dt','Thoroughness','0–1','r'],
+      ['cr','Creativity','0–1','r']]},
+  {n:'Reliability & Consistency', q:'Can you count on predictable delivery?', w:0.090,
+   f:[['cvsigma','Monthly score σ','0–0.5↓','n'],['dp','Manager trust','0–1','r'],['fs','Follow-through','0–1','r'],
+      ['tot_com','Total commitments','int','n'],['av','Critical availability','0–1','r'],['tot_cri','Critical periods','int','n'],
+      ['pmest','Estimated days','≥0','n'],['pmactual','Actual days','≥0','n']]},
+  {n:'Collaboration & Communication', q:'How well do they work with others?', w:0.085,
+   f:[['tc4','Team contribution','0–1','r'],['cm','Communication clarity','0–1','r'],['rsphours','Avg response (hrs)','≥0↓','n'],
+      ['cf','Conflict handling','0–1','r'],['kn','Knowledge sharing','0–1','r'],['fb','Feedback reception','0–1','r'],
+      ['tot_han','Total handoffs','int','n'],['blraw','Blocking rate','0–1↓','r']]},
+  {n:'Initiative, Ownership & Problem-Solving', q:'Do they go beyond what is assigned?', w:0.080,
+   f:[['incount','Initiatives started','int','n'],['ow','Ownership','0–1','r'],['ps','Problem-solving','0–1','r'],
+      ['au','Autonomy','0–1','r'],['bccount','Cross-team contributions','int','n'],['imp','Initiative impact','0–1','r']]},
+  {n:'Learning, Growth & Adaptability', q:'Is this employee growing?', w:0.070,
+   f:[['skcount','Skills acquired','int','n'],['pd','Pursues development','0–1','r'],['ad6','Adaptability','0–1','r'],
+      ['fp','Feedback follow-through','0–1','r'],['lr','Learning rate','0–1','r'],['vrroles','Roles competent in','int','n']]},
+  {n:'Time & Resource Efficiency', q:'Productive with time and resources?', w:0.065,
+   f:[['ut','Utilisation','0–1','r'],['et','Output efficiency','0–1','r'],['rt','Resource use','0–1','r'],
+      ['tot_meet','Total meetings','int','n'],['mt','Productive meetings','0–1','r'],['otratio','Overtime ratio','≥0↓','n'],
+      ['wmraw','Wasted time','0–1↓','r']]},
+  {n:'Goal Alignment & Strategic Contribution', q:'Advancing what the company cares about?', w:0.080,
+   f:[['ga','Tasks linked to goals','0–1','r'],['tot_task','Total tasks','int','n'],['tot_goal','Total goals','int','n'],
+      ['gc','Goals met','0–1','r'],['st','Strategic understanding','0–1','r'],['pv','Prioritisation','0–1','r'],['vi','Visible impact','0–1','r']]},
+  {n:'Leadership & Influence', q:'Do they make others better?', w:0.055,
+   f:[['mncount','People mentored','int','n'],['inf','Influence','0–1','r'],['de','Delegation','0–1','r'],
+      ['dm','Decision quality','0–1','r'],['te','Team elevation','0–1','r'],['cr9','Crisis performance','0–1','r']]},
+  {n:'Cultural Fit & Citizenship', q:'Align with values & positive workplace?', w:0.045,
+   f:[['va','Values alignment','0–1','r'],['eth','Ethics','0–1','r'],['po','Positivity','0–1','r'],
+      ['evcount','Voluntary activities','int','n'],['ngcount','Negative incidents','int↓','n'],['prc','Professional conduct','0–1','r']]},
+  {n:'Availability & Workload Health', q:'Present and sustainable?', w:0.050,
+   f:[['at','Attendance rate','0–1','r'],['pu','Punctuality','0–1','r'],['uaraw','Unplanned absence','0–1↓','r'],
+      ['bn','Burnout risk','0–1↓','r'],['wlratio','Workload ratio','~1','n'],['tot_days','Working days','int','n'],
+      ['lvratio','Leave taken','0–1','r'],['lvtarget','Leave target','0–1','r']]},
+  {n:'Client & Stakeholder Impact', q:'Value delivered externally?', w:0.050,
+   f:[['csat','Client satisfaction','0–1','r'],['cfbcount','Positive feedback','int','n'],['tot_acc','Client accounts','int','n'],
+      ['ret','Retention','0–1','r'],['revattributed','Revenue attributed','≥0','n'],['revtarget','Revenue target','≥1','n'],
+      ['nccount','Negative interactions','int↓','n'],['re','Relationship building','0–1','r']]}
+];
+const GATE_META=[
+  ['G1','Disciplinary hold','Active suspension, PIP with frozen evaluation, or disciplinary hold.'],
+  ['G2','Exit notice','Resignation submitted or termination notice given.'],
+  ['G3','Role redundant','Role eliminated or being made redundant.'],
+  ['G4','Extended leave','On medical/parental/sabbatical leave — insufficient data.'],
+  ['G5','Under investigation','Fraud/embezzlement/policy investigation — scoring premature.'],
+  ['G6','Data integrity','Evaluation data flagged fabricated or unreliable.'],
+  ['G7','Legal hold','Active litigation where scoring creates legal exposure.']
+];
+const MOD_META=[
+  ['M1','Data completeness'],['M2','Evaluator confidence'],['M3','Tenure adequacy'],
+  ['M4','Context friction'],['M5','Calibration factor']
+];
+const PALETTE=['#4f8cff','#22d3a6','#f5a524','#f04438','#a855f7','#06b6d4','#84cc16','#ec4899','#f97316','#14b8a6','#6366f1','#eab308'];
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+function buildGates(){
+  const el=document.getElementById('gatesGrid'); el.innerHTML='';
+  GATE_META.forEach((g,i)=>{
+    const pass=gates[i]==='f';
+    const div=document.createElement('div');
+    div.className='gate';
+    div.innerHTML=`<div class="gname">${g[0]} · ${g[1]}</div>
+      <div class="gdesc">${g[2]}</div>
+      <span class="pill ${pass?'pass':'fail'}">${pass?'PASS':'TRIGGERED'}</span>`;
+    div.onclick=()=>{ gates[i]= gates[i]==='f'?'t':'f'; render(); };
+    el.appendChild(div);
+  });
+}
+function buildMods(){
+  const el=document.getElementById('modCard'); el.innerHTML='';
+  MOD_META.forEach((m,i)=>{
+    const row=document.createElement('div'); row.className='mod-row';
+    row.innerHTML=`<label>${m[0]} · ${m[1]}</label>`;
+    const r=document.createElement('input'); r.type='range'; r.min=0.5; r.max=1; r.step=0.01; r.value=modifiers[i];
+    const v=document.createElement('span'); v.className='mod-val'; v.textContent=modifiers[i].toFixed(2);
+    r.oninput=()=>{ modifiers[i]=parseFloat(r.value); v.textContent=modifiers[i].toFixed(2); render(); };
+    row.appendChild(r); row.appendChild(v); el.appendChild(row);
+  });
+}
+function buildParams(){
+  const el=document.getElementById('params'); el.innerHTML='';
+  PARAM_META.forEach((meta,idx)=>{
+    const card=document.createElement('div'); card.className='param'; card.dataset.idx=idx;
+    if(idx===0) card.classList.add('open');
+    const head=document.createElement('div'); head.className='param-head';
+    head.innerHTML=`<div class="ttl">P${idx+1} · ${meta.n}<small>${meta.q}</small></div>
+      <div class="right">
+        <canvas class="param-mini" id="mini${idx}" width="46" height="46"></canvas>
+        <div style="text-align:right">
+          <div class="param-score" id="ps${idx}">—</div>
+          <div class="param-weight">WEIGHT ${meta.w.toFixed(3)}</div>
+        </div>
+        <span class="caret">▸</span>
+      </div>`;
+    head.onclick=(e)=>{ card.classList.toggle('open'); };
+    const body=document.createElement('div'); body.className='param-body';
+    meta.f.forEach(f=>{
+      const [key,label,range,type]=f;
+      const field=document.createElement('div'); field.className='field';
+      const val=data[idx][key];
+      if(type==='r'){ // 0-1 slider
+        field.innerHTML=`<div class="lab">${label}<small>range ${range}</small></div>`;
+        const wrap=document.createElement('div'); wrap.className='rngwrap';
+        const r=document.createElement('input'); r.type='range'; r.min=0; r.max=1; r.step=0.01; r.value=val;
+        const b=document.createElement('b'); b.textContent=(+val).toFixed(2);
+        r.oninput=()=>{ data[idx][key]=parseFloat(r.value); b.textContent=parseFloat(r.value).toFixed(2); render(); };
+        wrap.appendChild(r); wrap.appendChild(b); field.appendChild(wrap);
+      } else {
+        field.innerHTML=`<div class="lab">${label}<small>range ${range}</small></div>`;
+        const inp=document.createElement('input'); inp.type='number'; inp.value=val; inp.step='any';
+        inp.oninput=()=>{ const nv=parseFloat(inp.value); if(!isNaN(nv)){ data[idx][key]=nv; render(); } };
+        field.appendChild(inp);
+      }
+      body.appendChild(field);
+    });
+    const mt=document.createElement('span'); mt.className='mathtoggle'; mt.textContent='▾ Show the math';
+    mt.onclick=()=>{ card.classList.toggle('showmath'); mt.textContent=card.classList.contains('showmath')?'▴ Hide the math':'▾ Show the math'; };
+    const math=document.createElement('div'); math.className='math'; math.id='math'+idx;
+    body.appendChild(mt); body.appendChild(math);
+    card.appendChild(head); card.appendChild(body);
+    el.appendChild(card);
+  });
+}
+
+function drawMini(canvasId,val,color){
+  const c=document.getElementById(canvasId); if(!c) return; const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,46,46); const cx=23,cy=23,r=18;
+  ctx.lineWidth=5; ctx.strokeStyle='#1c2435';
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,2*Math.PI); ctx.stroke();
+  ctx.strokeStyle=color; ctx.beginPath();
+  ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+2*Math.PI*val); ctx.stroke();
+  ctx.fillStyle='#cdd8e6'; ctx.font='bold 11px Segoe UI'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(Math.round(val*100),cx,cy);
+}
+
+function drawGauge(score){
+  const c=document.getElementById('gauge'); const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,380,220);
+  const cx=190,cy=190,r=150;
+  const segs=[[0,40,'#f04438'],[40,60,'#f5a524'],[60,75,'#eab308'],[75,88,'#22c55e'],[88,100,'#22d3a6']];
+  ctx.lineWidth=22; ctx.lineCap='butt';
+  segs.forEach(s=>{
+    const a0=Math.PI+(s[0]/100)*Math.PI, a1=Math.PI+(s[1]/100)*Math.PI;
+    ctx.strokeStyle=s[2]; ctx.beginPath(); ctx.arc(cx,cy,r,a0,a1); ctx.stroke();
+  });
+  // needle
+  const ang=Math.PI+(Math.max(0,Math.min(100,score))/100)*Math.PI;
+  ctx.strokeStyle='#fff'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx+Math.cos(ang)*(r-12),cy+Math.sin(ang)*(r-12)); ctx.stroke();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(cx,cy,7,0,2*Math.PI); ctx.fill();
+}
+
+function drawRadar(vals){
+  const c=document.getElementById('radar'); const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,300,300); const cx=150,cy=150,R=110,n=12;
+  ctx.strokeStyle='#1c2435'; ctx.fillStyle='#5d6b80'; ctx.font='9px Segoe UI';
+  for(let ring=1;ring<=4;ring++){
+    ctx.beginPath();
+    for(let i=0;i<=n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; const rr=R*ring/4;
+      const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr; i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+    ctx.stroke();
+  }
+  for(let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n;
+    ctx.strokeStyle='#1c2435'; ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R); ctx.stroke();
+    ctx.fillStyle='#6b7a90'; ctx.textAlign='center';
+    ctx.fillText('P'+(i+1),cx+Math.cos(a)*(R+13),cy+Math.sin(a)*(R+13));
+  }
+  ctx.beginPath();
+  for(let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; const rr=R*vals[i];
+    const x=cx+Math.cos(a)*rr,y=cy+Math.sin(a)*rr; i?ctx.lineTo(x,y):ctx.moveTo(x,y);}
+  ctx.closePath();
+  ctx.fillStyle='rgba(79,140,255,.25)'; ctx.fill();
+  ctx.strokeStyle='#4f8cff'; ctx.lineWidth=2; ctx.stroke();
+  for(let i=0;i<n;i++){ const a=-Math.PI/2+i*2*Math.PI/n; const rr=R*vals[i];
+    ctx.fillStyle='#22d3a6'; ctx.beginPath(); ctx.arc(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr,3,0,2*Math.PI); ctx.fill();}
+}
+
+function bandOf(s){
+  if(s<=0) return ['GATED — SCORE VOID','#f04438'];
+  if(s<40) return ['NEEDS SUPPORT','#f04438'];
+  if(s<60) return ['DEVELOPING','#f5a524'];
+  if(s<75) return ['SOLID','#eab308'];
+  if(s<88) return ['STRONG','#22c55e'];
+  return ['EXCEPTIONAL','#22d3a6'];
+}
+
+function render(){
+  const R=computeAll();
+  // gauge
+  drawGauge(R.S);
+  document.getElementById('scoreNum').textContent=R.S.toFixed(2);
+  const [bn,bc]=bandOf(R.S);
+  const sb=document.getElementById('scoreBand'); sb.textContent=bn; sb.style.color=bc;
+  // radar
+  drawRadar(R.Xfinal);
+  const lg=document.getElementById('radarLegend'); lg.innerHTML='';
+  PARAM_META.forEach((m,i)=>{
+    lg.innerHTML+=`<tr><td><span class="dot" style="background:${PALETTE[i]}"></span>P${i+1} ${m.n.split(' ')[0]}</td><td>${Math.round(R.Xfinal[i]*100)}%</td></tr>`;
+  });
+  // contribution
+  const cb=document.getElementById('contrib'); cb.innerHTML='';
+  const maxC=Math.max(...R.scaledContrib,0.001);
+  PARAM_META.forEach((m,i)=>{
+    const pct=Math.max(0,R.scaledContrib[i]/maxC*100);
+    cb.innerHTML+=`<div class="contrib-row">
+      <span><b style="color:${PALETTE[i]}">P${i+1}</b> ${m.n}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      <b>+${R.scaledContrib[i].toFixed(2)}</b></div>`;
+  });
+  // param scores, minis, math
+  for(let i=0;i<12;i++){
+    document.getElementById('ps'+i).textContent=R.Xraw[i].toFixed(3);
+    drawMini('mini'+i,R.Xraw[i],PALETTE[i]);
+    const m=document.getElementById('math'+i);
+    let html=`<div class="ml"><span><code>X${i+1} (raw)</code></span><span>${R.Xraw[i].toFixed(4)}</span></div>`;
+    if(SIG_IDX.has(i)) html+=`<div class="ml"><span>sigmoid-spread →</span><span>${R.Xfinal[i].toFixed(4)}</span></div>`;
+    R.mls[i].forEach(([l,v])=>{ html+=`<div class="ml"><span>${l}</span><span>${v}</span></div>`; });
+    m.innerHTML=html;
+  }
+}
+
+/* ============================================================
+   TOOLBAR ACTIONS
+   ============================================================ */
+function rand(a,b){ return a+Math.random()*(b-a); }
+function randomize(){
+  PARAM_META.forEach((meta,idx)=>{
+    meta.f.forEach(f=>{
+      const [key,,,type]=f;
+      if(type==='r') data[idx][key]=+rand(0.4,0.98).toFixed(2);
+      else{
+        if(key.includes('count')||key==='ngcount'||key==='nccount') data[idx][key]=Math.round(rand(0,6));
+        else if(key.startsWith('tot')) data[idx][key]=Math.round(rand(10,80));
+        else if(key==='revattributed') data[idx][key]=Math.round(rand(700000,1300000));
+        else if(key==='revtarget') data[idx][key]=1000000;
+        else if(key==='wlratio') data[idx][key]=+rand(0.8,1.4).toFixed(2);
+        else if(key==='cvsigma') data[idx][key]=+rand(0.03,0.3).toFixed(2);
+        else data[idx][key]=+rand(1,8).toFixed(1);
+      }
+    });
+  });
+  modifiers=modifiers.map(()=>+rand(0.7,1).toFixed(2));
+  buildParams(); buildMods(); render();
+}
+function resetSample(){
+  data=JSON.parse(JSON.stringify(SAMPLE));
+  gates=['f','f','f','f','f','f','f'];
+  modifiers=[1.0,1.0,1.0,0.9,1.0];
+  buildGates(); buildMods(); buildParams(); render();
+}
+function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1500); }
+function copySummary(){
+  const R=computeAll();
+  let s=`EMPLOYEE PERFORMANCE SCORE: ${R.S.toFixed(2)}/100 (${bandOf(R.S)[0]})\nGates G=${R.G}  Modifiers M=${R.M.toFixed(3)}\n\n`;
+  PARAM_META.forEach((m,i)=> s+=`P${i+1} ${m.n}: ${R.Xraw[i].toFixed(3)}  (contrib +${R.scaledContrib[i].toFixed(2)})\n`);
+  navigator.clipboard.writeText(s).then(()=>showToast('Summary copied')); 
+}
+function exportScenario(){
+  const blob=new Blob([JSON.stringify({data,gates,modifiers},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='employee_scenario.json'; a.click(); showToast('Scenario exported');
+}
+function importScenario(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=()=>{ const fr=new FileReader(); fr.onload=()=>{
+    try{ const o=JSON.parse(fr.result);
+      if(o.data) data=o.data; if(o.gates) gates=o.gates; if(o.modifiers) modifiers=o.modifiers;
+      buildGates(); buildMods(); buildParams(); render(); showToast('Scenario imported');
+    }catch(e){ showToast('Invalid file'); } };
+    fr.readAsText(inp.files[0]); };
+  inp.click();
+}
+
+/* INIT */
+buildGates(); buildMods(); buildParams(); render();
+</script>
+</body>
+</html>

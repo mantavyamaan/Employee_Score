@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Employee Score Console</title>
+<style>
+  :root{
+    --bg:#0a0e14; --panel:#121822; --panel-2:#0e141d; --line:#1f2a37;
+    --txt:#e6edf3; --muted:#8b9aad; --dim:#5d6b7d;
+    --accent:#4cc9f0; --accent-2:#7b8cff; --good:#3ddc97; --warn:#ffb454; --bad:#ff5d73;
+    --gold:#ffd166;
+    --r:14px; --r-sm:9px;
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  body{background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(123,140,255,.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 20%, rgba(76,201,240,.07), transparent 55%),
+    var(--bg);}
+  a{color:var(--accent)}
+  .wrap{max-width:1340px;margin:0 auto;padding:26px 22px 80px}
+  header.top{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
+  .titleblock .eyebrow{font-size:10.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  .titleblock h1{margin:4px 0 6px;font-size:27px;letter-spacing:-.5px;font-weight:700}
+  .titleblock p{margin:0;color:var(--muted);max-width:640px;font-size:13px}
+  .role-select{display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:10px 14px}
+  .role-select label{font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:600}
+  select,input,button{font-family:inherit;color:var(--txt)}
+  .role-select select{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;
+    padding:8px 12px;font-size:14px;font-weight:600;cursor:pointer}
+  .toolbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+  .toolbar button{background:var(--panel);border:1px solid var(--line);border-radius:9px;
+    padding:9px 14px;font-size:12.5px;color:var(--muted);cursor:pointer;font-weight:600;transition:.15s}
+  .toolbar button:hover{border-color:var(--accent);color:var(--txt);background:var(--panel-2)}
+  .grid{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+  @media(max-width:1080px){.grid{grid-template-columns:1fr}}
+  .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--line);
+    border-radius:var(--r);padding:18px}
+  .panel h2{margin:0 0 4px;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .sticky{position:sticky;top:18px}
+  /* gauge */
+  .gauge-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+  .gauge-num{font-size:54px;font-weight:800;letter-spacing:-2px;line-height:1}
+  .gauge-band{font-size:11px;letter-spacing:.24em;text-transform:uppercase;font-weight:700;margin-top:-2px}
+  .gauge-scale{display:flex;justify-content:space-between;width:100%;color:var(--dim);font-size:10px;margin-top:2px}
+  .bands{display:flex;width:100%;gap:3px;margin-top:6px}
+  .bands span{flex:1;text-align:center;font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+    padding:5px 2px;border-radius:6px;background:var(--panel-2);border:1px solid var(--line)}
+  .bands span.on{color:#04121a;font-weight:800}
+  /* gates */
+  .gates{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}
+  .gate{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;cursor:pointer;
+    transition:.15s;user-select:none}
+  .gate:hover{border-color:var(--accent-2)}
+  .gate .gid{font-size:9.5px;letter-spacing:.16em;color:var(--dim);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+  .gate .gname{font-size:12px;font-weight:700;margin:3px 0 4px}
+  .gate .gdesc{font-size:10.5px;color:var(--muted);line-height:1.35}
+  .pill{font-size:9px;font-weight:800;letter-spacing:.1em;padding:2px 7px;border-radius:20px}
+  .pill.pass{background:rgba(61,220,151,.14);color:var(--good)}
+  .pill.fail{background:rgba(255,93,115,.16);color:var(--bad)}
+  /* modifiers */
+  .mods{display:flex;flex-direction:column;gap:11px;margin-top:6px}
+  .mod-row{display:grid;grid-template-columns:42px 1fr 52px;gap:10px;align-items:center}
+  .mod-row .ml{font-size:11px;font-weight:700;color:var(--accent-2)}
+  .mod-row .mv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12.5px}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:5px;border-radius:5px;
+    background:linear-gradient(90deg,var(--accent),var(--accent-2));outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+    background:#fff;border:3px solid var(--accent);cursor:pointer;box-shadow:0 0 0 3px rgba(76,201,240,.18)}
+  input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#fff;border:3px solid var(--accent)}
+  .mod-desc{grid-column:1/-1;font-size:10px;color:var(--dim);margin-top:-4px}
+  /* composition */
+  .comp{display:flex;flex-direction:column;gap:9px;margin-top:8px}
+  .comp-row{display:grid;grid-template-columns:160px 1fr 56px;gap:10px;align-items:center}
+  .comp-row .cl{font-size:11.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .comp-bar{height:9px;border-radius:6px;background:var(--panel-2);overflow:hidden;border:1px solid var(--line)}
+  .comp-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--accent-2),var(--accent))}
+  .comp-row .cv{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;font-size:12px}
+  /* params accordion */
+  .param{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;background:var(--panel-2)}
+  .param > summary{list-style:none;cursor:pointer;padding:13px 16px;display:flex;align-items:center;gap:12px;
+    background:linear-gradient(180deg,rgba(255,255,255,.015),transparent)}
+  .param > summary::-webkit-details-marker{display:none}
+  .param .pidx{font-size:10px;font-weight:800;color:#04121a;background:var(--accent);border-radius:6px;
+    padding:3px 7px;letter-spacing:.04em;min-width:34px;text-align:center}
+  .param .ptitle{font-weight:700;font-size:13.5px;flex:1}
+  .param .ptitle small{display:block;font-weight:500;color:var(--muted);font-size:11px;margin-top:1px}
+  .param .pscore{font-variant-numeric:tabular-nums;font-weight:800;font-size:16px;min-width:62px;text-align:right}
+  .param .pscore small{font-size:10px;color:var(--dim);font-weight:600;display:block}
+  .param .chev{color:var(--dim);transition:.2s}
+  .param[open] .chev{transform:rotate(90deg)}
+  .param .body{padding:6px 16px 16px;border-top:1px solid var(--line)}
+  .fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:13px;margin-top:12px}
+  .field label{font-size:11px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between;gap:6px}
+  .field label .vk{color:var(--accent);font-weight:700;font-size:10px}
+  .field .desc{font-size:10px;color:var(--dim);margin:3px 0 6px;line-height:1.35;min-height:26px}
+  .field input[type=number],.field input[type=text]{width:100%;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:8px 10px;font-size:13px;font-variant-numeric:tabular-nums}
+  .field input:focus{border-color:var(--accent);outline:none}
+  .field .rngwrap{display:flex;align-items:center;gap:9px}
+  .field .rngwrap output{font-variant-numeric:tabular-nums;font-weight:700;font-size:12px;min-width:40px;text-align:right}
+  .chk{display:flex;align-items:center;gap:9px;cursor:pointer;padding:6px 0}
+  .chk input{width:16px;height:16px;accent-color:var(--accent)}
+  .formula{margin-top:14px;font-size:11px;color:var(--muted);background:var(--panel);border:1px dashed var(--line);
+    border-radius:9px;padding:11px 13px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.7;
+    white-space:pre-wrap;word-break:break-word}
+  .formula b{color:var(--accent)}
+  .radar-wrap{display:flex;justify-content:center;margin-top:6px}
+  .legend{font-size:10px;color:var(--dim);text-align:center;margin-top:6px}
+  .footnote{margin-top:26px;color:var(--dim);font-size:11px;text-align:center;line-height:1.6}
+  .badge{display:inline-block;font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;
+    padding:3px 8px;border-radius:20px;background:rgba(123,140,255,.13);color:var(--accent-2);margin-left:8px}
+  .domain-head{display:flex;align-items:center;gap:8px;margin:22px 0 10px}
+  .domain-head .ln{flex:1;height:1px;background:var(--line)}
+  .domain-head span{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  textarea.io{width:100%;height:120px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;
+    color:var(--txt);font-family:ui-monospace,monospace;font-size:11px;padding:10px;margin-top:8px}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);
+    border:1px solid var(--accent);border-radius:10px;padding:11px 18px;font-size:12.5px;font-weight:600;
+    opacity:0;pointer-events:none;transition:.25s;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="titleblock">
+      <div class="eyebrow">Performance Evaluation Instrument</div>
+      <h1>Employee Score Console</h1>
+      <p>Adjust any input and the index recalculates instantly — same formula as the model notebook: evidence-anchored <b>BCI</b>, decay penalties, Gaussian sweet-spots, Huber-robust composites, hard knockout gates, situational modifiers, and a role-tuned <b>Choquet integral</b>.</p>
+    </div>
+    <div class="role-select">
+      <label for="role">Role / Domain</label>
+      <select id="role">
+        <option value="sales">Sales</option>
+        <option value="projects">Projects</option>
+        <option value="hr">Human Resources</option>
+        <option value="accounts">Accounts</option>
+        <option value="teammanager">Team Manager</option>
+        <option value="vendor_manager">Vendor Manager</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button id="btnRandom">Randomize</button>
+    <button id="btnReset">Reset to sample</button>
+    <button id="btnExpand">Expand all</button>
+    <button id="btnCollapse">Collapse all</button>
+    <button id="btnCopy">Copy summary</button>
+    <button id="btnExport">Export scenario</button>
+    <button id="btnImport">Import scenario</button>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT: parameters -->
+    <div>
+      <div id="coreParams"></div>
+      <div class="domain-head"><span>Role-Specific Parameters (13–15)</span><div class="ln"></div></div>
+      <div id="domainParams"></div>
+    </div>
+
+    <!-- RIGHT: console -->
+    <div class="sticky">
+      <div class="panel" style="text-align:center">
+        <h2>Performance Index</h2>
+        <div class="gauge-wrap">
+          <canvas id="gauge" width="300" height="172"></canvas>
+          <div class="gauge-num" id="scoreNum">0.0</div>
+          <div class="gauge-band" id="scoreBand">—</div>
+          <div class="gauge-scale"><span>0</span><span>50</span><span>100</span></div>
+          <div class="bands" id="bands">
+            <span data-b="0">Critical</span><span data-b="1">Below</span>
+            <span data-b="2">Meets</span><span data-b="3">Strong</span><span data-b="4">Exceptional</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>Shape of the Profile</h2>
+        <div class="radar-wrap"><canvas id="radar" width="320" height="300"></canvas></div>
+        <div class="legend">All 15 parameter scores, 0 → 100%</div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>Composition — Who's Pulling the Needle <span class="badge" id="contribNote">Choquet-weighted</span></h2>
+        <div class="comp" id="composition"></div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>Hard Knockout Gates · G = <span id="gVal">1</span></h2>
+        <div class="gates" id="gates"></div>
+      </div>
+
+      <div class="panel" style="margin-top:16px">
+        <h2>Situational Modifiers · M = <span id="mVal">1.00</span></h2>
+        <div class="mods" id="mods"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <b>S = 100 · G · M · (C_μ / μ(N))</b> — a Choquet integral over a 2-additive fuzzy measure with role-tuned
+    singleton capacities and pairwise synergies/redundancies. Runs entirely in this page; nothing leaves your browser.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   HELPER FUNCTIONS  (ports of the notebook primitives)
+============================================================ */
+function logGamma(z){
+  const g=[676.5203681218851,-1259.1392167224028,771.32342877765313,
+    -176.61502916214059,12.507343278686905,-0.13857109526572012,
+    9.9843695780195716e-6,1.5056327351493116e-7];
+  if(z<0.5) return Math.log(Math.PI/Math.sin(Math.PI*z))-logGamma(1-z);
+  z-=1; let x=0.99999999999980993;
+  for(let i=0;i<g.length;i++) x+=g[i]/(z+i+1);
+  const t=z+g.length-0.5;
+  return 0.5*Math.log(2*Math.PI)+(z+0.5)*Math.log(t)-t+Math.log(x);
+}
+function betaln(a,b){return logGamma(a)+logGamma(b)-logGamma(a+b);}
+// regularized incomplete beta  I_x(a,b)
+function betacf(x,a,b){
+  const MAXIT=200,EPS=3e-12,FPMIN=1e-300;
+  let qab=a+b,qap=a+1,qam=a-1,c=1,d=1-qab*x/qap;
+  if(Math.abs(d)<FPMIN)d=FPMIN; d=1/d; let h=d;
+  for(let m=1;m<=MAXIT;m++){
+    const m2=2*m;
+    let aa=m*(b-m)*x/((qam+m2)*(a+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; h*=d*c;
+    aa=-(a+m)*(qab+m)*x/((a+m2)*(qap+m2));
+    d=1+aa*d; if(Math.abs(d)<FPMIN)d=FPMIN;
+    c=1+aa/c; if(Math.abs(c)<FPMIN)c=FPMIN;
+    d=1/d; const del=d*c; h*=del;
+    if(Math.abs(del-1)<EPS)break;
+  }
+  return h;
+}
+function betacdf(x,a,b){
+  if(x<=0)return 0; if(x>=1)return 1;
+  const bt=Math.exp(-betaln(a,b)+a*Math.log(x)+b*Math.log(1-x));
+  if(x<(a+1)/(a+b+2)) return bt*betacf(x,a,b)/a;
+  return 1-bt*betacf(1-x,b,a)/b;
+}
+// inverse Beta CDF (quantile) via bisection — replaces scipy beta.ppf
+function betappf(p,a,b){
+  if(p<=0)return 0; if(p>=1)return 1;
+  let lo=0,hi=1;
+  for(let i=0;i<200;i++){
+    const mid=(lo+hi)/2;
+    if(betacdf(mid,a,b)<p) lo=mid; else hi=mid;
+    if(hi-lo<1e-12)break;
+  }
+  return (lo+hi)/2;
+}
+function bci(successes,trials,confidence=0.05){
+  if(trials===0)return 0.0;
+  return betappf(confidence, successes+1, trials-successes+1);
+}
+function edp(x,k){return Math.exp(-k*x);}
+function ln_norm(count,cap){
+  if(cap<=0)return 0.0;
+  return Math.min(Math.log(1+count)/Math.log(1+cap),1.0);
+}
+function gaussian_penalty(actual,ideal,sigma){
+  return Math.exp(-Math.pow(actual-ideal,2)/(2*sigma*sigma));
+}
+function hrc(values,weights,delta=0.15,max_iter=100,tol=1e-6){
+  values=values.map(Number); weights=weights.slice();
+  const wsum=weights.reduce((a,b)=>a+b,0);
+  weights=weights.map(w=>w/wsum);
+  let theta=weights.reduce((s,w,i)=>s+w*values[i],0);
+  for(let it=0;it<max_iter;it++){
+    const adj=weights.slice();
+    for(let i=0;i<values.length;i++){
+      const r=Math.abs(values[i]-theta);
+      if(r>delta) adj[i]=weights[i]*(delta/r);
+    }
+    const aw=adj.reduce((a,b)=>a+b,0);
+    if(aw===0)break;
+    const tn=values.reduce((s,v,i)=>s+adj[i]*v,0)/aw;
+    if(Math.abs(tn-theta)<tol){theta=tn;break;}
+    theta=tn;
+  }
+  return theta;
+}
+const clamp01=x=>Math.max(0,Math.min(1,x));
+const r5=x=>Math.round(x); // round helper
+
+/* ============================================================
+   SAMPLE DATA  (verbatim from notebook)
+============================================================ */
+const CORE_SAMPLE=[
+ {tc:0.88,tvnum:52,tvbench:45,dd:0.85,tot_del:20,adraw:2.5,pr:0.90,escraw:0.08,rwraw:0.10},
+ {qa:0.82,fa:0.78,tot_sub:50,drraw:1.2,cs:0.85,dt:0.80,cr:0.65},
+ {cvsigma:0.12,dp:0.85,fs:0.90,tot_com:20,av:0.80,tot_cri:5,pmest:5.0,pmactual:6.0},
+ {tc4:0.80,cm:0.85,rsphours:3.0,cf:0.75,kn:0.70,fb:0.80,tot_han:60,blraw:0.05},
+ {incount:4,ow:0.85,ps:0.80,au:0.82,bccount:2,imp:0.70},
+ {skcount:2,pd:0.70,ad6:0.80,fp:0.75,lr:0.70,vrroles:2},
+ {ut:0.85,et:0.80,rt:0.75,tot_meet:20,mt:0.70,otratio:0.15,wmraw:0.12},
+ {ga:0.85,tot_task:50,tot_goal:5,gc:0.80,st:0.75,pv:0.78,vi:0.72},
+ {mncount:2,inf:0.70,de:0.50,dm:0.80,te:0.75,cr9:0.72},
+ {va:0.85,eth:0.90,po:0.80,evcount:3,ngcount:0,prc:0.88},
+ {at:0.95,pu:0.90,uaraw:0.05,bn:0.20,wlratio:1.15,tot_days:200,lvratio:0.07,lvtarget:0.08},
+ {csat:0.82,cfbcount:5,tot_acc:20,ret:0.85,revattributed:1100000,revtarget:1000000,nccount:1,re:0.75}
+];
+const SAMPLE_GATES=['f','f','f','f','f','f','f'];
+const SAMPLE_MODS=[1.0,1.0,1.0,0.9,1.0];
+
+const DOMAIN_SAMPLE={
+ sales:[
+  {pv:850000,pvtarget:1000000,lconv:28,lworked:120,dclosed:14,avgdeal:62000,avgdealbench:55000,
+   scdays:38,scdaysbench:35,uprev:45000,baserev:870000,achurn:2,fcsub:900000,fcactual:870000,
+   quota:800000,quotaach:870000,newlogos:5,newlogotgt:4,wpacc:0.82,d2p:0.65,pwin:0.45,
+   discavg:12.0,discbench:15.0,revconc:0.35,mydeals:3,totaldeals:14},
+  {crmcorr:480,crmtotal:520,callsmade:340,callstgt:300,propqual:4.2,discdoc:25,disctotal:28,
+   dlostrerr:2,stageupd:0.88,fucomp:0.92,handoff:0.85,cintel:4,tpadh:0.80,qtacc:0.93},
+  {execcon:8,execcontgt:10,refgen:3,nps:42,custeng:0.78,stracov:0.85,partdeals:2,evleadconv:5,
+   evleadtot:20,tlcontrib:2,chupd:0.90,expplan:4,expplantgt:6}
+ ],
+ projects:[
+  {delscope:42,deltotal:48,actspend:285000,budget:300000,spi:1.05,cpi:0.98,mshit:11,mstotal:13,
+   riskearly:8,risktotal:10,stksat:4.1,chgreq:5,origscope:48,blkdays:4,projdays:180,defects:6,
+   deldel:42,rework:3,accmet:40,acctotal:42,veltrend:1.08,tdadded:5,tdresolved:3,intpass:0.92,deplsucc:0.95},
+  {srpacc:11,srptotal:12,issres:14,issressla:12,docscomp:18,docstotal:20,retroheld:4,resutil:0.88,
+   resutiltgt:1.0,govheld:10,govreq:12,auditcomp:0.90,tooladopt:0.85,escrespdays:1.5,escsla:2.0},
+  {tmsat:4.0,stkcomm:0.92,vendiss:2,vendtotal:15,cliesc:1,reqclar:0.85,ctdepmgd:8,ctdeptot:10,
+   ktsess:3,handoffq:0.88,innovsug:2}
+ ],
+ hr:[
+  {ttf:32,ttfbench:28,offacc:18,offmade:20,qoh90:3.9,volleavers:5,hcscope:120,intxfer:4,divscore:0.72,
+   srceff:0.65,candexp:4.2,hmsat:4.0,regattrn:2,totvollv:5,wfplacc:0.85,offcomp:0.90,i2o:3.5,
+   earlyturn:1,tothires:18},
+  {ercasessla:22,ercasestot:25,polcomp:0.93,trndel:12,trnplan:14,engcurr:3.8,engprior:3.6,formgriev:3,
+   hrbpsat:4.1,payacc:0.995,benenroll:0.92,comptrn:0.96,auditfind:1,hrisacc:0.97,onbcomp:0.88,exitint:0.75},
+  {enps:35,enpsbench:30,succcov:0.60,deicomp:3,deiplan:4,mgrcoach:8,hrresp:6,hrrespsla:8,cultpart:0.82,
+   welluptk:0.45,intmob:0.12,talrev:0.90,pipsucc:0.40,piptot:5,recoguse:0.65}
+ ],
+ accounts:[
+  {restate:0,closesot:11,closestot:12,cleanrec:145,totrec:150,varexpsla:28,vartotal:32,mataudit:0,
+   finfc:4800000,finact:5000000,regcomp:8,regtotal:8,jeacc:0.98,icrecacc:0.95,rptot:0.92,accracc:0.94,
+   taxacc:0.96,bsrev:0.90,mechk:0.95},
+  {soxexc:0,apinterm:420,aptotal:450,arinterm:380,artotal:400,duppay:1,finpoladh:0.92,dichkpass:48,
+   dichktot:50,sodcomp:0.98,accrev:1.0,vmauth:0.97,bnkrec:0.95,woauth:1.0,fraudflag:3,fraudact:3},
+  {bpsat:4.0,qreshrs:18,qressla:24,procimp:3,autoinit:2,costsav:45000,costsavtgt:50000,trnsess:2,
+   dashadopt:0.75,sysup:0.99,doccurr:0.85}
+ ],
+ teammanager:[
+  {tmavg:0.74,tmavgprior:0.70,voldep:2,tmsize:15,tmpromo:2,keysucc:3,keytot:5,pipimp:1,piptot:2,
+   o2oheld:46,o2osched:48,trnhrs:12,trnhrstgt:16,hpret:1.0,tmeng:4.0,carplan:12,carplantgt:15,
+   rampdays:35,ramptgt:30,revcomp:1.0,skgclosed:4,skgtot:6},
+  {prodhc:14,allochc:15,tmbudact:310000,tmbudalloc:300000,cfdelot:5,cfdeltot:6,upfb:4.1,decdays:2.5,
+   decdaysbench:2.0,mtghrs:0.18,slamet:0.90,capacc:0.85,proccomp:0.92,incresp:2.0,increspsla:4.0,delgeff:0.80},
+  {tmdei:0.78,psysafe:4.0,recogfreq:12,recogtgt:15,confres:0.85,chgadopt:0.80,stratinit:3,stratinittgt:4,
+   innovideas:5,fbloop:0.82,wleq:0.88}
+ ],
+ vendor_manager:[
+  {slasmet:85,slastot:95,actvendspend:520000,contrvendcost:500000,renfav:8,rentot:10,vendinc:4,
+   savdel:42000,savtgt:50000,divspend:0.18,divspendtgt:0.20,critcatcov:7,critcattot:8,vendqual:0.82,
+   venddelot:0.88,contrvalmgd:2500000,vendinnov:2,vendcons:3,vendconstgt:4,paytermopt:5,paytermtgt:7,tcored:0.05},
+  {spundcontr:480000,totspend:520000,rfpcomp:12,rfptot:14,venddd:28,vendact:32,purchpo:195,purchtot:200,
+   invapprdays:4,invapprtgt:5,vendriskass:26,vendrisktot:32,mavspend:0.08,contrexpmgd:0.95,
+   supponbdays:12,supponbtgt:10,sustcomp:0.80,inscert:0.92},
+  {vendsat:4.0,stratrev:0.85,vendescres:6,vendesctot:7,mktintel:3,mktinteltgt:4,stksat:4.1,
+   venddevplan:4,venddevtgt:5,catstrat:0.75,cfsrcproj:3,legalcollab:0.88,earlyeng:0.70}
+ ]
+};
+
+/* ============================================================
+   FIELD SCHEMA  — label, key, type, range, description
+   type: 'num' | 'rate'(0-1 slider) | 'chk'(unused) 
+============================================================ */
+const F=(key,label,type,desc,opts={})=>({key,label,type,desc,...opts});
+const CORE_SCHEMA=[
+ {idx:'P1',title:'Task & Deliverable Performance',sub:'Does this employee get their work done, on time, and right?',
+  fields:[
+   F('tc','On-time task rate','rate','Tasks completed on time / all tasks.'),
+   F('tvnum','Tasks completed','num','Tasks actually completed this period.'),
+   F('tvbench','Role benchmark','num','Tasks a role-holder is expected to complete.'),
+   F('dd','Deliverable on-time rate','rate','Deliverables submitted on time / all.'),
+   F('tot_del','Total deliverables','num','Total deliverables submitted.'),
+   F('adraw','Avg days late','num','Avg days late for late deliverables (0 if none).'),
+   F('pr','High-priority on-time','rate','High-priority tasks done on time.'),
+   F('escraw','Escalation rate','rate','Escalated / total — lower is better.'),
+   F('rwraw','Rework rate','rate','Reworked / completed — lower is better.')]},
+ {idx:'P2',title:'Quality of Work',sub:'How good is the actual output?',
+  fields:[
+   F('qa','Quality rating','rate','Reviewer quality rating.'),
+   F('fa','First-pass accept rate','rate','Accepted first try / all submissions.'),
+   F('tot_sub','Total submissions','num','Total submissions made.'),
+   F('drraw','Defects / deliverable','num','Avg defects per deliverable — lower better.'),
+   F('cs','Standards compliance','rate','Adherence to SOPs / standards.'),
+   F('dt','Thoroughness','rate','Detail / edge-case coverage.'),
+   F('cr','Creativity','rate','Innovation (0.50 if N/A).')]},
+ {idx:'P3',title:'Reliability & Consistency',sub:'Can you count on them month after month?',
+  fields:[
+   F('cvsigma','Monthly score σ','num','Std-dev of monthly scores — lower better.'),
+   F('dp','Manager trust','rate','Trust to deliver without oversight.'),
+   F('fs','Follow-through rate','rate','Commitments kept / made.'),
+   F('tot_com','Total commitments','num','Commitments made.'),
+   F('av','Crunch availability','rate','Available critical periods / total.'),
+   F('tot_cri','Critical periods','num','Critical periods faced.'),
+   F('pmest','Estimated days','num','Estimated duration for a representative task.'),
+   F('pmactual','Actual days','num','Actual duration of that task.')]},
+ {idx:'P4',title:'Collaboration & Communication',sub:'How well do they work with others?',
+  fields:[
+   F('tc4','Team contribution','rate','Peer-rated contribution to team goals.'),
+   F('cm','Communication clarity','rate','Clarity of comms.'),
+   F('rsphours','Avg response hrs','num','Avg hours to respond — lower better.'),
+   F('cf','Conflict handling','rate','Resolves disagreements constructively.'),
+   F('kn','Knowledge sharing','rate','Shares / teaches actively.'),
+   F('fb','Feedback receptivity','rate','Accepts & acts on feedback.'),
+   F('tot_han','Total handoffs','num','Handoffs occurred.'),
+   F('blraw','Blocking rate','rate','Times blocked others / handoffs — lower better.')]},
+ {idx:'P5',title:'Initiative, Ownership & Problem-Solving',sub:'Do they go beyond what is assigned?',
+  fields:[
+   F('incount','Initiatives started','num','Improvements / ideas started.'),
+   F('ow','Ownership','rate','End-to-end ownership.'),
+   F('ps','Problem-solving','rate','Finds root causes vs band-aids.'),
+   F('au','Autonomy','rate','Self-direction level.'),
+   F('bccount','Cross-team contributions','num','Times helped other teams.'),
+   F('imp','Initiative impact','rate','Measurable outcomes of initiatives.')]},
+ {idx:'P6',title:'Learning, Growth & Adaptability',sub:'Are they growing or standing still?',
+  fields:[
+   F('skcount','New skills / certs','num','Skills or certs acquired.'),
+   F('pd','Proactive development','rate','Pursuit of development.'),
+   F('ad6','Adaptability','rate','Adapts to change.'),
+   F('fp','Feedback follow-through','rate','Prior feedback addressed (0.50 if first review).'),
+   F('lr','Learning rate','rate','Productivity speed in new areas.'),
+   F('vrroles','Roles competent','num','Different roles they can perform.')]},
+ {idx:'P7',title:'Time & Resource Efficiency',sub:'Productive with time and resources?',
+  fields:[
+   F('ut','Utilisation','rate','Productive hours / available.'),
+   F('et','Output efficiency','rate','Output per effort vs peers.'),
+   F('rt','Resource thrift','rate','Efficient use of resources.'),
+   F('tot_meet','Total meetings','num','Meetings attended.'),
+   F('mt','Productive meetings','rate','Useful meetings / total.'),
+   F('otratio','Overtime ratio','rate','OT hours / standard — excess hurts.'),
+   F('wmraw','Wasted-time fraction','rate','Idle / wasted hours — lower better.')]},
+ {idx:'P8',title:'Goal Alignment & Strategic Contribution',sub:'Advancing what the company cares about?',
+  fields:[
+   F('ga','Task-to-OKR linkage','rate','Tasks mapped to OKRs.'),
+   F('tot_task','Total tasks','num','Tasks assigned.'),
+   F('tot_goal','Total goals','num','Individual goals assigned.'),
+   F('gc','Goal completion','rate','Goals met or exceeded.'),
+   F('st','Strategic understanding','rate','Grasp of strategy.'),
+   F('pv','Prioritisation','rate','Works on highest impact.'),
+   F('vi','Visible impact','rate','Measurable impact on outcomes.')]},
+ {idx:'P9',title:'Leadership & Influence',sub:'Do they make people around them better?',
+  fields:[
+   F('mncount','People mentored','num','People actively mentored.'),
+   F('inf','Influence','rate','Ideas / standards adopted by others.'),
+   F('de','Delegation','rate','Delegates effectively (0.50 if no reports).'),
+   F('dm','Decision quality','rate','Quality of decisions.'),
+   F('te','Team elevation','rate','Lifts those around them.'),
+   F('cr9','Crisis performance','rate','Performance under pressure.')]},
+ {idx:'P10',title:'Cultural Fit & Citizenship',sub:'Aligned with values, positive presence?',
+  fields:[
+   F('va','Values alignment','rate','Embodies company values.'),
+   F('eth','Ethics','rate','Integrity / honesty.'),
+   F('po','Positive environment','rate','Contribution to positive workplace.'),
+   F('evcount','Voluntary activities','num','Non-mandatory participations.'),
+   F('ngcount','Negative incidents','num','Confirmed incidents — 5+ zeroes this param.'),
+   F('prc','Professionalism','rate','General conduct.')]},
+ {idx:'P11',title:'Availability, Attendance & Workload Health',sub:'Present and sustainable?',
+  fields:[
+   F('at','Attendance','rate','Days present / working days.'),
+   F('pu','Punctuality','rate','On-time days / working days.'),
+   F('uaraw','Unplanned absence','rate','Unplanned absences fraction — lower better.'),
+   F('bn','Burnout risk','rate','0 none → 1 critical — lower better.'),
+   F('wlratio','Workload ratio','num','1.0 ideal; over/under both penalised.'),
+   F('tot_days','Working days','num','Total working days.'),
+   F('lvratio','Leave taken ratio','rate','Leave days / working days.'),
+   F('lvtarget','Leave target','rate','Company target leave ratio.')]},
+ {idx:'P12',title:'Client & Stakeholder Impact',sub:'Value delivered to clients / stakeholders?',
+  fields:[
+   F('csat','Satisfaction','rate','Client / stakeholder satisfaction.'),
+   F('cfbcount','Positive feedback','num','Commendations / shout-outs.'),
+   F('tot_acc','Total accounts','num','Accounts worked on.'),
+   F('ret','Retention','rate','Accounts retained / total (0.50 if N/A).'),
+   F('revattributed','Revenue attributed','num','Revenue attributable to this person.'),
+   F('revtarget','Revenue target','num','Revenue target.'),
+   F('nccount','Negative interactions','num','Complaints / escalations — lower better.'),
+   F('re','Relationship building','rate','Builds lasting trust.')]}
+];
+
+const DOMAIN_SCHEMA={
+ sales:[
+  {idx:'P13',title:'Pipeline & Revenue Generation',sub:'Enough pipeline converting to revenue?',fields:[
+   F('pv','Pipeline value','num','Total pipeline generated ($).'),F('pvtarget','Pipeline target','num','($).'),
+   F('lconv','Leads → opps','num','Qualified opportunities.'),F('lworked','Leads worked','num',''),
+   F('dclosed','Deals closed-won','num',''),F('avgdeal','Avg deal size','num','($).'),
+   F('avgdealbench','Team avg deal','num','($).'),F('scdays','Days to close','num','Avg.'),
+   F('scdaysbench','Target days','num',''),F('uprev','Upsell revenue','num','($).'),
+   F('baserev','Base revenue','num','($).'),F('achurn','Churned accounts','num','Lower better.'),
+   F('fcsub','Forecast submitted','num','($).'),F('fcactual','Actual revenue','num','($).'),
+   F('quota','Quota','num','($).'),F('quotaach','Quota achieved','num','($).'),
+   F('newlogos','New logos','num',''),F('newlogotgt','New-logo target','num',''),
+   F('wpacc','Weighted pipe accuracy','rate',''),F('d2p','Demo→proposal','rate',''),
+   F('pwin','Proposal win rate','rate',''),F('discavg','Avg discount %','num','Lower better.'),
+   F('discbench','Max discount %','num',''),F('revconc','Revenue concentration','rate','Lower better.'),
+   F('mydeals','Multi-year deals','num',''),F('totaldeals','Total deals','num','')]},
+  {idx:'P14',title:'Sales Process & CRM Discipline',sub:'Following process, clean CRM?',fields:[
+   F('crmcorr','CRM fields correct','num',''),F('crmtotal','CRM fields total','num',''),
+   F('callsmade','Calls / meetings','num',''),F('callstgt','Activity target','num',''),
+   F('propqual','Proposal quality /5','num',''),F('discdoc','Discovery docs done','num',''),
+   F('disctotal','Discovery required','num',''),F('dlostrerr','Deals lost to error','num','Lower better.'),
+   F('stageupd','Stage updates <24h','rate',''),F('fucomp','Follow-up in SLA','rate',''),
+   F('handoff','Handoff quality','rate',''),F('cintel','Comp-intel reports','num',''),
+   F('tpadh','Territory adherence','rate',''),F('qtacc','Quote accuracy','rate','')]},
+  {idx:'P15',title:'Relationships & Strategic Selling',sub:'Exec relationships, strategic?',fields:[
+   F('execcon','Exec contacts','num',''),F('execcontgt','Exec target','num',''),
+   F('refgen','Referrals','num',''),F('nps','NPS','num','-100..100.'),
+   F('custeng','Account engagement','rate',''),F('stracov','Strategic coverage','rate',''),
+   F('partdeals','Partner deals','num',''),F('evleadconv','Event leads converted','num',''),
+   F('evleadtot','Event leads total','num',''),F('tlcontrib','Thought leadership','num',''),
+   F('chupd','Health scores updated','rate',''),F('expplan','Expansion plans','num',''),
+   F('expplantgt','Expansion target','num','')]}
+ ],
+ projects:[
+  {idx:'P13',title:'Project Delivery Excellence',sub:'On scope, budget, schedule, quality?',fields:[
+   F('delscope','In-scope deliverables','num',''),F('deltotal','Total deliverables','num',''),
+   F('actspend','Actual spend','num','($).'),F('budget','Budget','num','($).'),
+   F('spi','SPI','num','EVM schedule index.'),F('cpi','CPI','num','EVM cost index.'),
+   F('mshit','Milestones on time','num',''),F('mstotal','Total milestones','num',''),
+   F('riskearly','Risks caught early','num',''),F('risktotal','Risks materialised','num',''),
+   F('stksat','Stakeholder sat /5','num',''),F('chgreq','Change requests','num','Lower better.'),
+   F('origscope','Original scope items','num',''),F('blkdays','Blocked days','num','Lower better.'),
+   F('projdays','Project days','num',''),F('defects','Defects at delivery','num','Lower better.'),
+   F('deldel','Deliverables at delivery','num',''),F('rework','Rework items','num','Lower better.'),
+   F('accmet','Acceptance met','num',''),F('acctotal','Acceptance total','num',''),
+   F('veltrend','Velocity trend','num','1.0 stable.'),F('tdadded','Tech debt added','num','Lower better.'),
+   F('tdresolved','Tech debt resolved','num',''),F('intpass','Integration tests pass','rate',''),
+   F('deplsucc','Deploy success','rate','')]},
+  {idx:'P14',title:'Project Governance & Reporting',sub:'Disciplined, transparent?',fields:[
+   F('srpacc','Status reports accurate','num',''),F('srptotal','Status reports total','num',''),
+   F('issres','Issues resolved','num',''),F('issressla','Issues within SLA','num',''),
+   F('docscomp','Docs completed','num',''),F('docstotal','Docs required','num',''),
+   F('retroheld','Retros held','num',''),F('resutil','Resource utilisation','rate',''),
+   F('resutiltgt','Utilisation target','rate',''),F('govheld','Governance held','num',''),
+   F('govreq','Governance required','num',''),F('auditcomp','Audit compliance','rate',''),
+   F('tooladopt','Tool adoption','rate',''),F('escrespdays','Esc response days','num','Lower better.'),
+   F('escsla','Esc SLA days','num','')]},
+  {idx:'P15',title:'Stakeholder & Team Management',sub:'Stakeholders informed, team happy?',fields:[
+   F('tmsat','Team satisfaction /5','num',''),F('stkcomm','Comms on time','rate',''),
+   F('vendiss','Vendor coord issues','num','Lower better.'),F('vendtotal','Vendor touchpoints','num',''),
+   F('cliesc','Client escalations','num','Lower better.'),F('reqclar','Requirement clarity','rate',''),
+   F('ctdepmgd','Cross-team deps managed','num',''),F('ctdeptot','Cross-team deps total','num',''),
+   F('ktsess','Knowledge transfer','num',''),F('handoffq','Handoff to BAU','rate',''),
+   F('innovsug','Improvements implemented','num','')]}
+ ],
+ hr:[
+  {idx:'P13',title:'Talent Acquisition & Workforce Planning',sub:'Hiring right people fast?',fields:[
+   F('ttf','Days to fill','num','Lower better.'),F('ttfbench','Target days','num',''),
+   F('offacc','Offers accepted','num',''),F('offmade','Offers made','num',''),
+   F('qoh90','Quality of hire /5','num',''),F('volleavers','Voluntary leavers','num','Lower better.'),
+   F('hcscope','Headcount scope','num',''),F('intxfer','Internal transfers','num',''),
+   F('divscore','Diversity score','rate',''),F('srceff','Proactive sourcing','rate',''),
+   F('candexp','Candidate exp /5','num',''),F('hmsat','Hiring mgr sat /5','num',''),
+   F('regattrn','Regrettable attrition','num','Lower better.'),F('totvollv','Total vol leavers','num',''),
+   F('wfplacc','Workforce plan accuracy','rate',''),F('offcomp','Offers competitive','rate',''),
+   F('i2o','Interviews / offer','num','Lower better.'),F('earlyturn','Early turnover','num','Lower better.'),
+   F('tothires','Total hires','num','')]},
+  {idx:'P14',title:'HR Operations & Compliance',sub:'Smooth ops, compliant, engaged?',fields:[
+   F('ercasessla','ER cases in SLA','num',''),F('ercasestot','ER cases total','num',''),
+   F('polcomp','Policy compliance','rate',''),F('trndel','L&D delivered','num',''),
+   F('trnplan','L&D planned','num',''),F('engcurr','Engagement now','num','/5.'),
+   F('engprior','Engagement prior','num','/5.'),F('formgriev','Grievances /100','num','Lower better.'),
+   F('hrbpsat','HRBP sat /5','num',''),F('payacc','Payroll accuracy','rate',''),
+   F('benenroll','Benefits enrolment','rate',''),F('comptrn','Compliance training','rate',''),
+   F('auditfind','Audit findings','num','Lower better.'),F('hrisacc','HRIS accuracy','rate',''),
+   F('onbcomp','Onboarding complete','rate',''),F('exitint','Exit interviews','rate','')]},
+  {idx:'P15',title:'People Experience & Strategic HR',sub:'Culture, succession, strategy?',fields:[
+   F('enps','eNPS','num','-100..100.'),F('enpsbench','eNPS benchmark','num',''),
+   F('succcov','Succession coverage','rate',''),F('deicomp','DEI completed','num',''),
+   F('deiplan','DEI planned','num',''),F('mgrcoach','Manager coaching','num',''),
+   F('hrresp','HR response hrs','num','Lower better.'),F('hrrespsla','Response SLA hrs','num',''),
+   F('cultpart','Culture participation','rate',''),F('welluptk','Wellness uptake','rate',''),
+   F('intmob','Internal mobility','rate',''),F('talrev','Talent reviews','rate',''),
+   F('pipsucc','PIP success','rate',''),F('piptot','PIPs total','num',''),
+   F('recoguse','Recognition tool use','rate','')]}
+ ],
+ accounts:[
+  {idx:'P13',title:'Financial Accuracy & Reporting',sub:'Accurate financials, on-time close?',fields:[
+   F('restate','Restatements','num','Lower better (0 ideal).'),F('closesot','Closes on time','num',''),
+   F('closestot','Close cycles','num',''),F('cleanrec','Clean reconciliations','num',''),
+   F('totrec','Total reconciliations','num',''),F('varexpsla','Variances in SLA','num',''),
+   F('vartotal','Variances total','num',''),F('mataudit','Material audit findings','num','Lower better.'),
+   F('finfc','Financial forecast','num','($).'),F('finact','Actual result','num','($).'),
+   F('regcomp','Filings compliant','num',''),F('regtotal','Filings total','num',''),
+   F('jeacc','Journal accuracy','rate',''),F('icrecacc','Interco accuracy','rate',''),
+   F('rptot','Reports on time','rate',''),F('accracc','Accrual accuracy','rate',''),
+   F('taxacc','Tax accuracy','rate',''),F('bsrev','Balance-sheet reviews','rate',''),
+   F('mechk','Month-end checklist','rate','')]},
+  {idx:'P14',title:'Controls, Risk & Compliance',sub:'Strong controls, low risk?',fields:[
+   F('soxexc','SOX exceptions','num','Lower better.'),F('apinterm','Payables in terms','num',''),
+   F('aptotal','Payables total','num',''),F('arinterm','Receivables in terms','num',''),
+   F('artotal','Receivables total','num',''),F('duppay','Duplicate payments','num','Lower better.'),
+   F('finpoladh','Policy adherence','rate',''),F('dichkpass','Data checks pass','num',''),
+   F('dichktot','Data checks total','num',''),F('sodcomp','SoD compliance','rate',''),
+   F('accrev','Access reviews','rate',''),F('vmauth','Vendor-master auth','rate',''),
+   F('bnkrec','Bank recs on time','rate',''),F('woauth','Write-offs authorised','rate',''),
+   F('fraudflag','Fraud flags','num',''),F('fraudact','Fraud indicators','num','')]},
+  {idx:'P15',title:'Stakeholder Service & Improvement',sub:'Serving partners, improving?',fields:[
+   F('bpsat','Partner sat /5','num',''),F('qreshrs','Query resolve hrs','num','Lower better.'),
+   F('qressla','Query SLA hrs','num',''),F('procimp','Process improvements','num',''),
+   F('autoinit','Automations','num',''),F('costsav','Cost savings','num','($).'),
+   F('costsavtgt','Savings target','num','($).'),F('trnsess','Training delivered','num',''),
+   F('dashadopt','Dashboard adoption','rate',''),F('sysup','System uptime','rate',''),
+   F('doccurr','SOPs current','rate','')]}
+ ],
+ teammanager:[
+  {idx:'P13',title:'Team Outcomes & People Development',sub:'Growing people, lifting performance?',fields:[
+   F('tmavg','Team avg score','rate',''),F('tmavgprior','Prior team avg','rate',''),
+   F('voldep','Voluntary departures','num','Lower better.'),F('tmsize','Team size','num',''),
+   F('tmpromo','Promotions','num',''),F('keysucc','Key roles w/ successor','num',''),
+   F('keytot','Key roles','num',''),F('pipimp','PIPs improved','num',''),
+   F('piptot','PIPs total','num',''),F('o2oheld','1:1s held','num',''),
+   F('o2osched','1:1s scheduled','num',''),F('trnhrs','Training hrs / member','num',''),
+   F('trnhrstgt','Training target','num',''),F('hpret','High-performer retention','rate',''),
+   F('tmeng','Team engagement /5','num',''),F('carplan','Career plans','num',''),
+   F('carplantgt','Career-plan target','num',''),F('rampdays','Ramp days','num','Lower better.'),
+   F('ramptgt','Ramp target','num',''),F('revcomp','Reviews on time','rate',''),
+   F('skgclosed','Skills gaps closed','num',''),F('skgtot','Skills gaps total','num','')]},
+  {idx:'P14',title:'Operational Management',sub:'Efficient, on-budget operation?',fields:[
+   F('prodhc','Productive headcount','num',''),F('allochc','Allocated headcount','num',''),
+   F('tmbudact','Budget spend','num','($).'),F('tmbudalloc','Budget allocated','num','($).'),
+   F('cfdelot','Cross-func on time','num',''),F('cfdeltot','Cross-func total','num',''),
+   F('upfb','Upward feedback /5','num',''),F('decdays','Decision days','num','Lower better.'),
+   F('decdaysbench','Decision target','num',''),F('mtghrs','Meeting-time fraction','rate','Sweet spot.'),
+   F('slamet','SLA compliance','rate',''),F('capacc','Capacity accuracy','rate',''),
+   F('proccomp','Process compliance','rate',''),F('incresp','Incident response hrs','num','Lower better.'),
+   F('increspsla','Incident SLA hrs','num',''),F('delgeff','Delegation success','rate','')]},
+  {idx:'P15',title:'Culture, Inclusion & Strategic Leadership',sub:'Inclusive, safe, strategic?',fields:[
+   F('tmdei','Team DEI','rate',''),F('psysafe','Psych safety /5','num',''),
+   F('recogfreq','Recognitions / qtr','num',''),F('recogtgt','Recognition target','num',''),
+   F('confres','Conflicts resolved','rate',''),F('chgadopt','Change adoption','rate',''),
+   F('stratinit','Strategic initiatives','num',''),F('stratinittgt','Strategic target','num',''),
+   F('innovideas','Ideas generated','num',''),F('fbloop','Feedback loop','rate',''),
+   F('wleq','Workload equity','rate','')]}
+ ],
+ vendor_manager:[
+  {idx:'P13',title:'Vendor Performance & Value',sub:'Max performance and value from suppliers?',fields:[
+   F('slasmet','SLAs met','num',''),F('slastot','SLAs total','num',''),
+   F('actvendspend','Actual vendor spend','num','($).'),F('contrvendcost','Contracted cost','num','($).'),
+   F('renfav','Favourable renewals','num',''),F('rentot','Renewals total','num',''),
+   F('vendinc','Vendor incidents','num','Lower better.'),F('savdel','Savings delivered','num','($).'),
+   F('savtgt','Savings target','num','($).'),F('divspend','Diverse spend','rate',''),
+   F('divspendtgt','Diverse target','rate',''),F('critcatcov','Critical cats covered','num',''),
+   F('critcattot','Critical cats total','num',''),F('vendqual','Vendor quality','rate',''),
+   F('venddelot','Vendor delivery on time','rate',''),F('contrvalmgd','Contract value managed','num','($).'),
+   F('vendinnov','Joint innovation','num',''),F('vendcons','Consolidations','num',''),
+   F('vendconstgt','Consolidation target','num',''),F('paytermopt','Payment-term ext days','num',''),
+   F('paytermtgt','Payment-term target','num',''),F('tcored','TCO reduction','rate','')]},
+  {idx:'P14',title:'Procurement Process & Compliance',sub:'Policy, risk, spend discipline?',fields:[
+   F('spundcontr','Spend under contract','num','($).'),F('totspend','Total spend','num','($).'),
+   F('rfpcomp','RFPs compliant','num',''),F('rfptot','RFPs total','num',''),
+   F('venddd','Vendors w/ due diligence','num',''),F('vendact','Active vendors','num',''),
+   F('purchpo','Purchases w/ PO','num',''),F('purchtot','Purchases total','num',''),
+   F('invapprdays','Invoice approval days','num','Lower better.'),F('invapprtgt','Invoice target','num',''),
+   F('vendriskass','Vendors risk-assessed','num',''),F('vendrisktot','Vendors total','num',''),
+   F('mavspend','Maverick spend','rate','Lower better.'),F('contrexpmgd','Contracts managed pre-expiry','rate',''),
+   F('supponbdays','Supplier onboard days','num','Lower better.'),F('supponbtgt','Onboard target','num',''),
+   F('sustcomp','Sustainability compliance','rate',''),F('inscert','Insurance certs current','rate','')]},
+  {idx:'P15',title:'Relationship & Strategic Sourcing',sub:'Partnerships, strategic sourcing?',fields:[
+   F('vendsat','Vendor satisfaction /5','num',''),F('stratrev','Strategic reviews','rate',''),
+   F('vendescres','Escalations resolved','num',''),F('vendesctot','Escalations total','num',''),
+   F('mktintel','Market-intel reports','num',''),F('mktinteltgt','Market-intel target','num',''),
+   F('stksat','Stakeholder sat /5','num',''),F('venddevplan','Vendor dev plans','num',''),
+   F('venddevtgt','Dev-plan target','num',''),F('catstrat','Category strategy','rate',''),
+   F('cfsrcproj','Cross-func sourcing','num',''),F('legalcollab','Legal collaboration','rate',''),
+   F('earlyeng','Early engagement','rate','')]}
+ ]
+};
+
+const GATE_META=[
+ ['G1','Disciplinary hold','Active suspension, frozen-eval PIP, or disciplinary hold.'],
+ ['G2','Exit in progress','Resignation or termination notice given.'],
+ ['G3','Role redundant','Role eliminated or being made redundant.'],
+ ['G4','Extended leave','Medical / parental / sabbatical — insufficient data.'],
+ ['G5','Under investigation','Fraud, embezzlement, or material policy violation.'],
+ ['G6','Data integrity failure','Evaluation data fabricated or unreliable.'],
+ ['G7','Legal hold','Active litigation; scoring creates legal exposure.']
+];
+const MOD_META=[
+ ['M1','Data completeness','Confidence in confirmed vs estimated data.',0.5,1.0,0.01],
+ ['M2','Role transition','1.0 stable · 0.85 changed mid-period · 0.7 new.',0.7,1.0,0.01],
+ ['M3','Period normalisation','1.0 full · 0.85 shortened · 0.7 <50%.',0.7,1.0,0.01],
+ ['M4','External circumstances','1.0 normal · 0.9 disruption · 0.8 severe.',0.8,1.0,0.01],
+ ['M5','Manager consistency','1.0 same · 0.9 one change · 0.8 multiple.',0.8,1.0,0.01]
+];
+
+/* ============================================================
+   STATE
+============================================================ */
+let role='sales';
+let core=JSON.parse(JSON.stringify(CORE_SAMPLE));
+let domain=JSON.parse(JSON.stringify(DOMAIN_SAMPLE[role]));
+let gatesState=SAMPLE_GATES.slice();
+let modsState=SAMPLE_MODS.slice();
+
+/* ============================================================
+   CORE PARAMETER COMPUTATIONS  (X1..X12)  — ports
+============================================================ */
+function computeCore(){
+ const p=core, X=[];
+ // P1
+ {const d=p[0];
+  const Tc=bci(d.tvnum, r5(d.tvnum/(d.tc||1e-9)));
+  const Tv=Math.min(d.tvnum/d.tvbench,1.3)/1.3;
+  const Dd=bci(r5(d.dd*d.tot_del),d.tot_del);
+  const Ad=edp(d.adraw,0.15);
+  const Pr=bci(r5(d.pr*10),10);
+  const Esc=1-bci(r5(d.escraw*d.tvnum),d.tvnum);
+  const Rw=1-bci(r5(d.rwraw*d.tvnum),d.tvnum);
+  const Tcore=hrc([Tc,Dd,Ad,Pr],[0.30,0.25,0.20,0.25]);
+  const Tdrag=hrc([Esc,Rw],[0.5,0.5]);
+  X.push(0.60*Tcore+0.20*Tv+0.20*Tdrag);}
+ // P2
+ {const d=p[1];
+  const Fa=bci(r5(d.fa*d.tot_sub),d.tot_sub);
+  const Dr=edp(d.drraw,0.4);
+  const Qout=hrc([d.qa,Fa,Dr,d.cs,d.dt],[0.25,0.20,0.20,0.15,0.20]);
+  X.push(0.85*Qout+0.15*d.cr);}
+ // P3
+ {const d=p[2];
+  const Cv=Math.exp(-2*Math.abs(d.cvsigma));
+  const Fs=bci(r5(d.fs*d.tot_com),d.tot_com);
+  const Av=bci(r5(d.av*d.tot_cri),d.tot_cri);
+  const Pm=1-Math.min(Math.abs(d.pmactual-d.pmest)/(d.pmest||1e-9),1);
+  X.push(hrc([Cv,d.dp,Fs,Av,Pm],[0.25,0.25,0.25,0.10,0.15]));}
+ // P4
+ {const d=p[3];
+  const Rsp=edp(d.rsphours,0.05);
+  const Bl=1-bci(r5(d.blraw*d.tot_han),d.tot_han);
+  const Cpos=hrc([d.tc4,d.cm,Rsp,d.cf,d.kn,d.fb],[0.25,0.20,0.15,0.10,0.15,0.15]);
+  X.push(Cpos*Bl);}
+ // P5
+ {const d=p[4];
+  const In=ln_norm(d.incount,10),Bc=ln_norm(d.bccount,5);
+  X.push(hrc([In,d.ow,d.ps,d.au,Bc,d.imp],[0.20,0.25,0.20,0.15,0.10,0.10]));}
+ // P6
+ {const d=p[5];
+  const Sk=ln_norm(d.skcount,5),Vr=Math.min(d.vrroles/3,1);
+  X.push(hrc([Sk,d.pd,d.ad6,d.fp,d.lr,Vr],[0.20,0.15,0.25,0.20,0.10,0.10]));}
+ // P7
+ {const d=p[6];
+  const Mt=bci(r5(d.mt*d.tot_meet),d.tot_meet);
+  const Ot=edp(Math.max(0,d.otratio-0.10),2);
+  const Wm=1-d.wmraw;
+  X.push(hrc([d.ut,d.et,d.rt,Mt,Ot,Wm],[0.25,0.25,0.15,0.10,0.15,0.10]));}
+ // P8
+ {const d=p[7];
+  const Ga=bci(r5(d.ga*d.tot_task),d.tot_task);
+  const Gc=bci(r5(d.gc*d.tot_goal),d.tot_goal);
+  X.push(hrc([Ga,Gc,d.st,d.pv,d.vi],[0.25,0.30,0.15,0.15,0.15]));}
+ // P9
+ {const d=p[8];
+  const Mn=ln_norm(d.mncount,4);
+  X.push(hrc([Mn,d.inf,d.de,d.dm,d.te,d.cr9],[0.15,0.20,0.15,0.20,0.20,0.10]));}
+ // P10
+ {const d=p[9];
+  const Ev=ln_norm(d.evcount,6);
+  const Ng=Math.max(0,1-0.2*d.ngcount);
+  const Ccit=hrc([d.va,d.eth,d.po,Ev,d.prc],[0.25,0.25,0.20,0.15,0.15]);
+  X.push(Ng*Ccit);}
+ // P11
+ {const d=p[10];
+  const At=bci(r5(d.at*d.tot_days),d.tot_days);
+  const Pu=bci(r5(d.pu*d.tot_days),d.tot_days);
+  const Ua=1-bci(r5(d.uaraw*d.tot_days),d.tot_days);
+  const Bn=1-d.bn;
+  const Wl=gaussian_penalty(d.wlratio,1.0,0.20);
+  const Lv=gaussian_penalty(d.lvratio,d.lvtarget,0.15);
+  X.push(hrc([At,Pu,Ua,Bn,Wl,Lv],[0.25,0.15,0.20,0.15,0.15,0.10]));}
+ // P12
+ {const d=p[11];
+  const Cfb=ln_norm(d.cfbcount,10);
+  const Ret=bci(r5(d.ret*d.tot_acc),d.tot_acc);
+  const Rev=Math.min(d.revattributed/d.revtarget,1.2)/1.2;
+  const Nc=Math.max(0,1-0.15*d.nccount);
+  const Si=hrc([d.csat,Cfb,Ret,Rev,d.re],[0.25,0.15,0.20,0.20,0.20]);
+  X.push(Nc*Si);}
+ return X;
+}
+
+/* ============================================================
+   ROLE-SPECIFIC COMPUTATIONS  (X13..X15)
+============================================================ */
+function computeDomain(){
+ const D=domain;
+ if(role==='sales'){
+  let d=D[0];
+  const pipeline=Math.min(d.pv/d.pvtarget,1.2)/1.2;
+  const conv=bci(d.lconv,d.lworked);
+  const dealcount=ln_norm(d.dclosed,20);
+  const dealsize=Math.min(d.avgdeal/d.avgdealbench,1.3)/1.3;
+  const cyc=edp(Math.max(0,d.scdays-d.scdaysbench),0.05);
+  const upsell=Math.min(d.uprev/Math.max(d.baserev,1),1);
+  const churn=Math.max(0,1-0.25*d.achurn);
+  const fc=1-Math.min(Math.abs(d.fcsub-d.fcactual)/Math.max(d.fcactual,1),1);
+  const quota=Math.min(d.quotaach/Math.max(d.quota,1),1.3)/1.3;
+  const logos=Math.min(d.newlogos/Math.max(d.newlogotgt,1),1.2)/1.2;
+  const disc=Math.min(d.discbench/Math.max(d.discavg,0.1),1.3)/1.3;
+  const conc=edp(d.revconc,2);
+  const my=bci(d.mydeals,d.totaldeals);
+  const X13=hrc([pipeline,conv,dealcount,dealsize,cyc,upsell,churn,fc,quota,logos,
+    d.wpacc,d.d2p,d.pwin,disc,conc,my],
+    [0.10,0.09,0.06,0.07,0.06,0.06,0.06,0.07,0.10,0.06,0.05,0.04,0.05,0.05,0.04,0.04]);
+  d=D[1];
+  const crm=bci(d.crmcorr,d.crmtotal);
+  const act=Math.min(d.callsmade/Math.max(d.callstgt,1),1.2)/1.2;
+  const disc2=bci(d.discdoc,d.disctotal);
+  const lostErr=Math.max(0,1-0.20*d.dlostrerr);
+  const cintel=ln_norm(d.cintel,8);
+  const X14=hrc([crm,act,d.propqual/5,disc2,lostErr,d.stageupd,d.fucomp,d.handoff,cintel,d.tpadh,d.qtacc],
+    [0.12,0.10,0.10,0.10,0.08,0.08,0.10,0.08,0.06,0.08,0.10]);
+  d=D[2];
+  const exec=Math.min(d.execcon/Math.max(d.execcontgt,1),1);
+  const ref=ln_norm(d.refgen,6);
+  const nps=Math.min(Math.max(d.nps,0)/100,1);
+  const partner=ln_norm(d.partdeals,5);
+  const ev=bci(d.evleadconv,d.evleadtot);
+  const tl=ln_norm(d.tlcontrib,5);
+  const exp=Math.min(d.expplan/Math.max(d.expplantgt,1),1);
+  const X15=hrc([exec,ref,nps,d.custeng,d.stracov,partner,ev,tl,d.chupd,exp],
+    [0.10,0.10,0.12,0.12,0.12,0.08,0.10,0.06,0.10,0.10]);
+  return [X13,X14,X15];
+ }
+ if(role==='projects'){
+  let d=D[0];
+  const scope=bci(d.delscope,d.deltotal);
+  const bud=edp(Math.abs(d.actspend-d.budget)/Math.max(d.budget,1),2);
+  const spi=Math.min(d.spi,1.2)/1.2, cpi=Math.min(d.cpi,1.2)/1.2;
+  const ms=bci(d.mshit,d.mstotal);
+  const riskq=d.riskearly/Math.max(d.risktotal,1);
+  const chg=edp(d.chgreq/Math.max(d.origscope,1),2);
+  const dep=1-Math.min(d.blkdays/Math.max(d.projdays,1),1);
+  const defect=edp(d.defects/Math.max(d.deldel,1),1.5);
+  const rework=Math.max(0,1-0.20*d.rework);
+  const acc=bci(d.accmet,d.acctotal);
+  const vel=gaussian_penalty(d.veltrend,1.0,0.20);
+  const td=Math.max(0,1-0.15*Math.max(0,d.tdadded-d.tdresolved));
+  const X13=hrc([scope,bud,spi,cpi,ms,riskq,d.stksat/5,chg,dep,defect,rework,acc,vel,td,d.intpass,d.deplsucc],
+    [0.08,0.08,0.08,0.07,0.08,0.07,0.07,0.06,0.05,0.06,0.05,0.06,0.05,0.04,0.05,0.05]);
+  d=D[1];
+  const sa=bci(d.srpacc,d.srptotal);
+  const ir=bci(d.issressla,d.issres);
+  const docs=d.docscomp/Math.max(d.docstotal,1);
+  const retros=ln_norm(d.retroheld,6);
+  const ru=gaussian_penalty(d.resutil,d.resutiltgt,0.15);
+  const gov=bci(d.govheld,d.govreq);
+  const escr=edp(Math.max(0,d.escrespdays-d.escsla),0.5);
+  const X14=hrc([sa,ir,docs,retros,ru,gov,d.auditcomp,d.tooladopt,escr],
+    [0.15,0.15,0.10,0.08,0.12,0.10,0.10,0.10,0.10]);
+  d=D[2];
+  const vc=1-bci(d.vendiss,d.vendtotal);
+  const ce=Math.max(0,1-0.25*d.cliesc);
+  const dm=bci(d.ctdepmgd,d.ctdeptot);
+  const kt=ln_norm(d.ktsess,6);
+  const inn=ln_norm(d.innovsug,5);
+  const X15=hrc([d.tmsat/5,d.stkcomm,vc,ce,d.reqclar,dm,kt,d.handoffq,inn],
+    [0.15,0.12,0.10,0.10,0.12,0.12,0.08,0.12,0.09]);
+  return [X13,X14,X15];
+ }
+ if(role==='hr'){
+  let d=D[0];
+  const ttf=edp(Math.max(0,d.ttf-d.ttfbench),0.03);
+  const oa=bci(d.offacc,d.offmade);
+  const attr=edp(d.volleavers/Math.max(d.hcscope,1),5);
+  const imob=ln_norm(d.intxfer,10);
+  const ie=edp(Math.max(0,d.i2o-3.0),0.3);
+  const reg=1-(d.regattrn/Math.max(d.totvollv,1));
+  const et=Math.max(0,1-0.30*d.earlyturn);
+  const X13=hrc([ttf,oa,d.qoh90/5,attr,imob,d.divscore,d.srceff,d.candexp/5,d.hmsat/5,reg,d.wfplacc,d.offcomp,ie,et],
+    [0.09,0.08,0.10,0.10,0.06,0.05,0.06,0.06,0.07,0.08,0.07,0.06,0.05,0.07]);
+  d=D[1];
+  const cr=bci(d.ercasessla,d.ercasestot);
+  const tr=Math.min(d.trndel/Math.max(d.trnplan,1),1);
+  const engd=0.5+0.5*Math.tanh(3*(d.engcurr-d.engprior));
+  const gr=edp(d.formgriev,0.3);
+  const au=Math.max(0,1-0.30*d.auditfind);
+  const X14=hrc([cr,d.polcomp,tr,engd,gr,d.hrbpsat/5,d.payacc,d.benenroll,d.comptrn,au,d.hrisacc,d.onbcomp,d.exitint],
+    [0.10,0.08,0.07,0.09,0.08,0.08,0.08,0.06,0.08,0.07,0.07,0.07,0.07]);
+  d=D[2];
+  const enps=Math.min(Math.max(d.enps,0)/100,1);
+  const dei=Math.min(d.deicomp/Math.max(d.deiplan,1),1);
+  const co=ln_norm(d.mgrcoach,12);
+  const resp=edp(Math.max(0,d.hrresp-d.hrrespsla),0.1);
+  const mob=Math.min(d.intmob/0.20,1);
+  const pip=bci(r5(d.pipsucc*d.piptot),d.piptot);
+  const X15=hrc([enps,d.succcov,dei,co,resp,d.cultpart,d.welluptk,mob,d.talrev,pip,d.recoguse],
+    [0.10,0.10,0.08,0.08,0.08,0.08,0.06,0.08,0.10,0.10,0.14]);
+  return [X13,X14,X15];
+ }
+ if(role==='accounts'){
+  let d=D[0];
+  const rest=Math.max(0,1-0.35*d.restate);
+  const ct=bci(d.closesot,d.closestot);
+  const ra=bci(d.cleanrec,d.totrec);
+  const ve=bci(d.varexpsla,d.vartotal);
+  const af=Math.max(0,1-0.40*d.mataudit);
+  const fc=1-Math.min(Math.abs(d.finfc-d.finact)/Math.max(d.finact,1),1);
+  const comp=bci(d.regcomp,d.regtotal);
+  const X13=hrc([rest,ct,ra,ve,af,fc,comp,d.jeacc,d.icrecacc,d.rptot,d.accracc,d.taxacc,d.bsrev,d.mechk],
+    [0.10,0.08,0.10,0.06,0.10,0.06,0.08,0.08,0.06,0.06,0.06,0.06,0.05,0.05]);
+  d=D[1];
+  const sox=Math.max(0,1-0.30*d.soxexc);
+  const ap=bci(d.apinterm,d.aptotal), ar=bci(d.arinterm,d.artotal);
+  const dup=Math.max(0,1-0.50*d.duppay);
+  const di=bci(d.dichkpass,d.dichktot);
+  const fraud=d.fraudflag/Math.max(d.fraudact,1);
+  const X14=hrc([sox,ap,ar,dup,d.finpoladh,di,d.sodcomp,d.accrev,d.vmauth,d.bnkrec,d.woauth,fraud],
+    [0.12,0.10,0.10,0.10,0.08,0.10,0.08,0.06,0.06,0.06,0.06,0.08]);
+  d=D[2];
+  const qr=edp(Math.max(0,d.qreshrs-d.qressla),0.1);
+  const pi=ln_norm(d.procimp,6), au=ln_norm(d.autoinit,4);
+  const sav=Math.min(d.costsav/Math.max(d.costsavtgt,1),1.2)/1.2;
+  const tr=ln_norm(d.trnsess,5);
+  const X15=hrc([d.bpsat/5,qr,pi,au,sav,tr,d.dashadopt,d.sysup,d.doccurr],
+    [0.15,0.12,0.12,0.10,0.12,0.08,0.10,0.10,0.11]);
+  return [X13,X14,X15];
+ }
+ if(role==='teammanager'){
+  let d=D[0];
+  const td=0.5+0.5*Math.tanh(4*(d.tmavg-d.tmavgprior));
+  const attr=edp(d.voldep/Math.max(d.tmsize,1),6);
+  const promo=ln_norm(d.tmpromo,Math.max(1,r5(d.tmsize*0.3)));
+  const succ=d.keysucc/Math.max(d.keytot,1);
+  const pip=bci(d.pipimp,d.piptot);
+  const o2o=bci(d.o2oheld,d.o2osched);
+  const th=Math.min(d.trnhrs/Math.max(d.trnhrstgt,1),1);
+  const cp=d.carplan/Math.max(d.carplantgt,1);
+  const ramp=edp(Math.max(0,d.rampdays-d.ramptgt),0.05);
+  const sg=d.skgclosed/Math.max(d.skgtot,1);
+  const X13=hrc([d.tmavg,td,attr,promo,succ,pip,o2o,th,d.hpret,d.tmeng/5,cp,ramp,d.revcomp,sg],
+    [0.10,0.10,0.08,0.06,0.06,0.06,0.08,0.06,0.08,0.08,0.06,0.05,0.06,0.07]);
+  d=D[1];
+  const hc=gaussian_penalty(d.prodhc/Math.max(d.allochc,1),1.0,0.10);
+  const bud=edp(Math.abs(d.tmbudact-d.tmbudalloc)/Math.max(d.tmbudalloc,1),3);
+  const cf=bci(d.cfdelot,d.cfdeltot);
+  const dec=edp(Math.max(0,d.decdays-d.decdaysbench),0.15);
+  const mt=edp(d.mtghrs,5);
+  const inc=edp(Math.max(0,d.incresp-d.increspsla),0.3);
+  const X14=hrc([hc,bud,cf,d.upfb/5,dec,mt,d.slamet,d.capacc,d.proccomp,inc,d.delgeff],
+    [0.10,0.08,0.10,0.14,0.06,0.06,0.10,0.08,0.08,0.10,0.10]);
+  d=D[2];
+  const rec=Math.min(d.recogfreq/Math.max(d.recogtgt,1),1);
+  const strat=Math.min(d.stratinit/Math.max(d.stratinittgt,1),1);
+  const inn=ln_norm(d.innovideas,10);
+  const X15=hrc([d.tmdei,d.psysafe/5,rec,d.confres,d.chgadopt,strat,inn,d.fbloop,d.wleq],
+    [0.10,0.14,0.10,0.10,0.10,0.10,0.10,0.14,0.12]);
+  return [X13,X14,X15];
+ }
+ // vendor_manager
+ {
+  let d=D[0];
+  const sla=bci(d.slasmet,d.slastot);
+  const cv=edp(Math.max(0,(d.actvendspend-d.contrvendcost)/Math.max(d.contrvendcost,1)),4);
+  const ren=bci(d.renfav,d.rentot);
+  const inc=Math.max(0,1-0.20*d.vendinc);
+  const sav=Math.min(d.savdel/Math.max(d.savtgt,1),1.3)/1.3;
+  const div=Math.min(d.divspend/Math.max(d.divspendtgt,0.01),1);
+  const backup=d.critcatcov/Math.max(d.critcattot,1);
+  const innov=ln_norm(d.vendinnov,5);
+  const cons=Math.min(d.vendcons/Math.max(d.vendconstgt,1),1);
+  const pay=Math.min(d.paytermopt/Math.max(d.paytermtgt,1),1);
+  const tco=Math.min(d.tcored/0.10,1);
+  const X13=hrc([sla,cv,ren,inc,sav,div,backup,d.vendqual,d.venddelot,innov,cons,pay,tco],
+    [0.12,0.08,0.08,0.08,0.10,0.05,0.07,0.08,0.08,0.06,0.06,0.06,0.08]);
+  d=D[1];
+  const cc=d.spundcontr/Math.max(d.totspend,1);
+  const rfp=bci(d.rfpcomp,d.rfptot);
+  const dd=d.venddd/Math.max(d.vendact,1);
+  const po=bci(d.purchpo,d.purchtot);
+  const inv=edp(Math.max(0,d.invapprdays-d.invapprtgt),0.3);
+  const rr=d.vendriskass/Math.max(d.vendrisktot,1);
+  const mav=edp(d.mavspend,8);
+  const onb=edp(Math.max(0,d.supponbdays-d.supponbtgt),0.1);
+  const X14=hrc([cc,rfp,dd,po,inv,rr,mav,d.contrexpmgd,onb,d.sustcomp,d.inscert],
+    [0.12,0.10,0.08,0.10,0.08,0.08,0.10,0.08,0.06,0.10,0.10]);
+  d=D[2];
+  const esc=bci(d.vendescres,d.vendesctot);
+  const mi=Math.min(d.mktintel/Math.max(d.mktinteltgt,1),1);
+  const dev=Math.min(d.venddevplan/Math.max(d.venddevtgt,1),1);
+  const cfs=ln_norm(d.cfsrcproj,5);
+  const X15=hrc([d.vendsat/5,d.stratrev,esc,mi,d.stksat/5,dev,d.catstrat,cfs,d.legalcollab,d.earlyeng],
+    [0.12,0.10,0.10,0.08,0.12,0.08,0.10,0.08,0.10,0.12]);
+  return [X13,X14,X15];
+ }
+}
+
+/* ============================================================
+   DOMAIN CONFIG + CHOQUET
+============================================================ */
+function getDomainConfig(r){
+ if(r==='sales')return{cw:0.72,dw:{12:0.12,13:0.09,14:0.07},
+   ex:{'12,0':0.018,'13,1':0.012,'14,3':0.010,'12,13':-0.008},ov:{11:0.070}};
+ if(r==='projects')return{cw:0.72,dw:{12:0.12,13:0.09,14:0.07},
+   ex:{'12,13':0.020,'14,12':-0.015,'12,1':0.015,'14,3':0.010},ov:{0:0.135}};
+ if(r==='hr')return{cw:0.72,dw:{12:0.12,13:0.09,14:0.07},
+   ex:{'12,13':0.025,'14,9':0.012,'13,2':0.010},ov:{9:0.060}};
+ if(r==='accounts')return{cw:0.62,dw:{12:0.16,13:0.12,14:0.10},
+   ex:{'12,13':0.020,'14,1':0.012,'12,2':0.010},ov:{1:0.120}};
+ if(r==='teammanager')return{cw:0.68,dw:{12:0.13,13:0.10,14:0.09},
+   ex:{'12,13':0.030,'12,14':0.015,'13,12':-0.020,'14,9':0.012},ov:{8:0.090}};
+ return{cw:0.72,dw:{12:0.12,13:0.09,14:0.07},
+   ex:{'12,14':0.020,'13,12':-0.015,'14,3':0.010,'12,13':0.012},ov:{}};
+}
+function sigmoid_transform(x,x0=0.50,k=8.0){return 1/(1+Math.exp(-k*(x-x0)));}
+function mu(S,a,aij){
+ let v=0; S.forEach(i=>v+=(a[i]||0));
+ for(const key in aij){const [i,j]=key.split(',').map(Number);
+   if(S.has(i)&&S.has(j))v+=aij[key];}
+ return v;
+}
+function choquet(scores,a,aij){
+ const n=scores.length;
+ const sigma=[...Array(n).keys()].sort((i,j)=>scores[i]-scores[j]);
+ let integral=0;
+ for(let rank=0;rank<n;rank++){
+  const coalition=new Set(sigma.slice(rank));
+  const muv=mu(coalition,a,aij);
+  const delta=rank===0?scores[sigma[rank]]:scores[sigma[rank]]-scores[sigma[rank-1]];
+  integral+=delta*muv;
+ }
+ return integral;
+}
+
+/* ============================================================
+   FINAL SCORE
+============================================================ */
+function computeAll(){
+ const Xcore=computeCore();
+ const Xdom=computeDomain();
+ const Xraw=[...Xcore,...Xdom];
+ const cfg=getDomainConfig(role);
+ const sigIdx=new Set([3,4,5,7,8,9]);
+ const Xsig=Xraw.map((x,i)=>sigIdx.has(i)?sigmoid_transform(x):x);
+ const Xfinal=Xsig.map(clamp01);
+
+ let base_a={0:0.120,1:0.105,2:0.090,3:0.085,4:0.080,5:0.070,6:0.065,
+   7:0.080,8:0.055,9:0.045,10:0.050,11:0.050};
+ for(const k in cfg.ov) base_a[k]=cfg.ov[k];
+ const coreSum=Object.values(base_a).reduce((a,b)=>a+b,0);
+ for(const k in base_a) base_a[k]=base_a[k]*(cfg.cw/coreSum);
+ const a={...base_a};
+ for(const k in cfg.dw) a[k]=cfg.dw[k];
+
+ const baseInter={'0,1':0.025,'0,2':0.020,'4,2':0.015,'1,6':0.015,'4,5':0.015,
+   '7,11':0.020,'8,9':0.010,'0,6':-0.010,'3,8':-0.010,'2,10':-0.010,'5,4':-0.005};
+ const aij={};
+ for(const k in baseInter) aij[k]=baseInter[k]*cfg.cw;
+ for(const k in cfg.ex) aij[k]=cfg.ex[k];
+
+ const G=gatesState.reduce((g,h)=>g*(h==='t'?0:1),1);
+ const M=modsState.reduce((m,x)=>m*x,1);
+ const Cmu=choquet(Xfinal,a,aij);
+ const muN=mu(new Set([...Array(15).keys()]),a,aij);
+ const S=100*G*M*(Cmu/muN);
+
+ // contributions (Choquet marginal of each param to integral) — approximate via Shapley-ish weighting:
+ // use Xfinal[i]*a[i] normalized to S for an interpretable "pull" bar
+ const pulls=Xfinal.map((x,i)=>x*(a[i]||0));
+ return {Xraw,Xfinal,S,G,M,pulls,muN,Cmu};
+}
+
+/* ============================================================
+   RENDER
+============================================================ */
+const $=id=>document.getElementById(id);
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1800);}
+
+function fieldHTML(store,idx,f){
+ const v=store[idx][f.key];
+ const vk=f.type==='rate'?` <span class="vk">${(+v).toFixed(2)}</span>`:'';
+ if(f.type==='rate'){
+  return `<div class="field"><label>${f.label}${vk}</label>
+   <div class="desc">${f.desc||''}</div>
+   <div class="rngwrap">
+    <input type="range" min="0" max="1" step="0.01" value="${v}"
+      data-store="${store===core?'core':'domain'}" data-idx="${idx}" data-key="${f.key}">
+    <output>${(+v).toFixed(2)}</output></div></div>`;
+ }
+ return `<div class="field"><label>${f.label}</label>
+   <div class="desc">${f.desc||''}</div>
+   <input type="number" step="any" value="${v}"
+     data-store="${store===core?'core':'domain'}" data-idx="${idx}" data-key="${f.key}"></div>`;
+}
+
+function paramHTML(schema,idx,store,storeIdx,score,open){
+ const fields=schema.fields.map(f=>fieldHTML(store,storeIdx,f)).join('');
+ const pct=(score*100);
+ return `<details class="param" ${open?'open':''} data-pidx="${schema.idx}">
+   <summary>
+    <span class="pidx">${schema.idx}</span>
+    <span class="ptitle">${schema.title}<small>${schema.sub}</small></span>
+    <span class="pscore">${(score*100).toFixed(1)}<small>X = ${score.toFixed(3)}</small></span>
+    <span class="chev">▸</span>
+   </summary>
+   <div class="body"><div class="fields">${fields}</div></div>
+ </details>`;
+}
+
+function render(){
+ const res=computeAll();
+ // params (preserve open state)
+ const openSet=new Set([...document.querySelectorAll('.param[open]')].map(d=>d.dataset.pidx));
+ const coreHTML=CORE_SCHEMA.map((s,i)=>paramHTML(s,i,core,i,res.Xraw[i],openSet.has(s.idx))).join('');
+ $('coreParams').innerHTML=coreHTML;
+ const domHTML=DOMAIN_SCHEMA[role].map((s,i)=>paramHTML(s,i,domain,i,res.Xraw[12+i],openSet.has(s.idx))).join('');
+ $('domainParams').innerHTML=domHTML;
+ bindInputs();
+
+ // gates
+ $('gates').innerHTML=GATE_META.map((g,i)=>{
+  const pass=gatesState[i]==='f';
+  return `<div class="gate" data-gi="${i}">
+    <div class="gid">${g[0]} <span class="pill ${pass?'pass':'fail'}">${pass?'PASS':'TRIGGERED'}</span></div>
+    <div class="gname">${g[1]}</div><div class="gdesc">${g[2]}</div></div>`;
+ }).join('');
+ document.querySelectorAll('.gate').forEach(el=>el.onclick=()=>{
+  const i=+el.dataset.gi; gatesState[i]=gatesState[i]==='f'?'t':'f'; render();});
+ $('gVal').textContent=res.G;
+
+ // mods
+ $('mods').innerHTML=MOD_META.map((m,i)=>`
+  <div class="mod-row">
+    <span class="ml">${m[0]}</span>
+    <input type="range" min="${m[3]}" max="${m[4]}" step="${m[5]}" value="${modsState[i]}" data-mi="${i}">
+    <span class="mv">${modsState[i].toFixed(2)}</span>
+  </div><div class="mod-desc">${m[2]}</div>`).join('');
+ document.querySelectorAll('#mods input[type=range]').forEach(el=>{
+  el.oninput=()=>{modsState[+el.dataset.mi]=+el.value;
+    el.closest('.mod-row').querySelector('.mv').textContent=(+el.value).toFixed(2);
+    quickUpdate();};
+ });
+ $('mVal').textContent=res.M.toFixed(2);
+
+ // composition
+ const labels=['P1 Task','P2 Quality','P3 Reliab.','P4 Collab.','P5 Initiative','P6 Learning',
+   'P7 Efficiency','P8 Goals','P9 Leadership','P10 Culture','P11 Health','P12 Client',
+   'P13','P14','P15'];
+ const maxPull=Math.max(...res.pulls,1e-6);
+ $('composition').innerHTML=res.pulls.map((p,i)=>`
+   <div class="comp-row">
+     <span class="cl">${labels[i]}${i>=12?': '+DOMAIN_SCHEMA[role][i-12].idx:''}</span>
+     <div class="comp-bar"><i style="width:${(p/maxPull*100).toFixed(1)}%"></i></div>
+     <span class="cv">${(res.Xraw[i]*100).toFixed(0)}%</span>
+   </div>`).join('');
+
+ drawGauge(res.S);
+ drawRadar(res.Xraw);
+ setScore(res.S);
+ window._lastRes=res;
+}
+
+// light update for slider drags (score + gauge only)
+function quickUpdate(){
+ const res=computeAll();
+ // update rate field value displays without re-render
+ setScore(res.S); drawGauge(res.S); drawRadar(res.Xraw);
+ $('gVal').textContent=res.G; $('mVal').textContent=res.M.toFixed(2);
+ const maxPull=Math.max(...res.pulls,1e-6);
+ const rows=document.querySelectorAll('#composition .comp-row');
+ res.pulls.forEach((p,i)=>{if(rows[i]){rows[i].querySelector('i').style.width=(p/maxPull*100).toFixed(1)+'%';
+   rows[i].querySelector('.cv').textContent=(res.Xraw[i]*100).toFixed(0)+'%';}});
+ // update param header scores
+ document.querySelectorAll('#coreParams .param,#domainParams .param').forEach((el)=>{
+   const pidx=el.dataset.pidx;
+   const isCore=pidx.length<=3 && +pidx.replace('P','')<=12;
+   const num=+pidx.replace('P','');
+   const xi=res.Xraw[num-1];
+   const ps=el.querySelector('.pscore');
+   ps.innerHTML=`${(xi*100).toFixed(1)}<small>X = ${xi.toFixed(3)}</small>`;
+ });
+ window._lastRes=res;
+}
+
+function bindInputs(){
+ document.querySelectorAll('#coreParams input,#domainParams input').forEach(el=>{
+  const handler=()=>{
+   const store=el.dataset.store==='core'?core:domain;
+   const idx=+el.dataset.idx, key=el.dataset.key;
+   store[idx][key]=el.type==='range'?+el.value:(el.value===''?0:+el.value);
+   if(el.type==='range'){
+     const out=el.parentElement.querySelector('output');
+     if(out)out.textContent=(+el.value).toFixed(2);
+     const lbl=el.closest('.field').querySelector('.vk');
+     if(lbl)lbl.textContent=(+el.value).toFixed(2);
+     quickUpdate();
+   } else { quickUpdate(); }
+  };
+  el.oninput=handler;
+ });
+}
+
+function setScore(S){
+ $('scoreNum').textContent=S.toFixed(1);
+ const bands=['Critical','Below','Meets','Strong','Exceptional'];
+ const cuts=[0,40,60,75,88,101];
+ let bi=0; for(let i=0;i<5;i++) if(S>=cuts[i]) bi=i;
+ const colors=['var(--bad)','var(--warn)','var(--accent)','var(--good)','var(--gold)'];
+ const bandEl=$('scoreBand');
+ bandEl.textContent=bands[bi]; bandEl.style.color=colors[bi];
+ $('scoreNum').style.color=colors[bi];
+ document.querySelectorAll('#bands span').forEach((sp,i)=>{
+   sp.classList.toggle('on',i===bi);
+   sp.style.background=i===bi?colors[i]:'';
+ });
+}
+
+/* ---- gauge canvas ---- */
+function drawGauge(S){
+ const c=$('gauge'),ctx=c.getContext('2d');
+ const W=c.width,H=c.height,cx=W/2,cy=H-8,R=120;
+ ctx.clearRect(0,0,W,H);
+ const segs=[[0,40,'#ff5d73'],[40,60,'#ffb454'],[60,75,'#4cc9f0'],[75,88,'#3ddc97'],[88,100,'#ffd166']];
+ const a0=Math.PI,a1=2*Math.PI;
+ segs.forEach(s=>{
+  const sa=a0+(s[0]/100)*(a1-a0), ea=a0+(s[1]/100)*(a1-a0);
+  ctx.beginPath();ctx.arc(cx,cy,R,sa,ea);ctx.lineWidth=16;ctx.strokeStyle=s[2];ctx.lineCap='butt';ctx.stroke();
+ });
+ // needle
+ const sv=Math.max(0,Math.min(100,S));
+ const na=a0+(sv/100)*(a1-a0);
+ ctx.beginPath();ctx.moveTo(cx,cy);
+ ctx.lineTo(cx+Math.cos(na)*(R-6),cy+Math.sin(na)*(R-6));
+ ctx.lineWidth=3;ctx.strokeStyle='#e6edf3';ctx.stroke();
+ ctx.beginPath();ctx.arc(cx,cy,6,0,2*Math.PI);ctx.fillStyle='#e6edf3';ctx.fill();
+}
+
+/* ---- radar canvas ---- */
+function drawRadar(X){
+ const c=$('radar'),ctx=c.getContext('2d');
+ const W=c.width,H=c.height,cx=W/2,cy=H/2+6,R=110,n=15;
+ ctx.clearRect(0,0,W,H);
+ ctx.strokeStyle='#1f2a37';ctx.fillStyle='#5d6b7d';ctx.font='9px Inter';
+ for(let g=1;g<=4;g++){ctx.beginPath();
+   for(let i=0;i<=n;i++){const a=-Math.PI/2+(i%n)/n*2*Math.PI;const r=R*g/4;
+     const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+   ctx.stroke();}
+ for(let i=0;i<n;i++){const a=-Math.PI/2+i/n*2*Math.PI;
+   ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(a)*R,cy+Math.sin(a)*R);
+   ctx.strokeStyle='#162130';ctx.stroke();
+   const lx=cx+Math.cos(a)*(R+13),ly=cy+Math.sin(a)*(R+13);
+   ctx.fillStyle='#5d6b7d';ctx.textAlign='center';
+   ctx.fillText('P'+(i+1),lx,ly+3);}
+ ctx.beginPath();
+ for(let i=0;i<=n;i++){const idx=i%n;const a=-Math.PI/2+idx/n*2*Math.PI;
+   const r=R*Math.max(0,Math.min(1,X[idx]));
+   const x=cx+Math.cos(a)*r,y=cy+Math.sin(a)*r;i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+ ctx.closePath();
+ ctx.fillStyle='rgba(76,201,240,.18)';ctx.fill();
+ ctx.strokeStyle='#4cc9f0';ctx.lineWidth=2;ctx.stroke();
+ for(let i=0;i<n;i++){const a=-Math.PI/2+i/n*2*Math.PI;
+   const r=R*Math.max(0,Math.min(1,X[i]));
+   ctx.beginPath();ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,2.5,0,2*Math.PI);
+   ctx.fillStyle='#7b8cff';ctx.fill();}
+}
+
+/* ============================================================
+   TOOLBAR ACTIONS
+============================================================ */
+$('role').onchange=e=>{
+ role=e.target.value;
+ domain=JSON.parse(JSON.stringify(DOMAIN_SAMPLE[role]));
+ render();
+};
+$('btnReset').onclick=()=>{
+ core=JSON.parse(JSON.stringify(CORE_SAMPLE));
+ domain=JSON.parse(JSON.stringify(DOMAIN_SAMPLE[role]));
+ gatesState=SAMPLE_GATES.slice(); modsState=SAMPLE_MODS.slice();
+ render(); toast('Reset to sample');
+};
+$('btnRandom').onclick=()=>{
+ const jitterRate=v=>clamp01(v+(Math.random()-0.5)*0.4);
+ const jitterNum=v=>Math.max(0,Math.round(v*(0.6+Math.random()*0.9)*100)/100);
+ const apply=(store,schemaArr)=>{
+   store.forEach((obj,i)=>{
+     const fields=schemaArr[i].fields;
+     fields.forEach(f=>{
+       if(f.type==='rate') obj[f.key]=+jitterRate(obj[f.key]).toFixed(2);
+       else obj[f.key]=jitterNum(obj[f.key]);
+     });
+   });
+ };
+ apply(core,CORE_SCHEMA);
+ apply(domain,DOMAIN_SCHEMA[role]);
+ render(); toast('Randomized inputs');
+};
+$('btnExpand').onclick=()=>document.querySelectorAll('.param').forEach(d=>d.open=true);
+$('btnCollapse').onclick=()=>document.querySelectorAll('.param').forEach(d=>d.open=false);
+$('btnCopy').onclick=()=>{
+ const r=window._lastRes||computeAll();
+ const lines=['Employee Score Console — Summary','Role: '+role,
+   'Final Index: '+r.S.toFixed(2)+' / 100','G='+r.G+'  M='+r.M.toFixed(2),'',
+   ...r.Xraw.map((x,i)=>`X${i+1} = ${x.toFixed(3)} (${(x*100).toFixed(1)}%)`)];
+ navigator.clipboard.writeText(lines.join('\n')).then(()=>toast('Summary copied'));
+};
+$('btnExport').onclick=()=>{
+ const scenario={role,core,domain,gates:gatesState,modifiers:modsState};
+ const blob=new Blob([JSON.stringify(scenario,null,2)],{type:'application/json'});
+ const url=URL.createObjectURL(blob);
+ const a=document.createElement('a');a.href=url;a.download='employee-scenario.json';a.click();
+ URL.revokeObjectURL(url); toast('Scenario exported');
+};
+$('btnImport').onclick=()=>{
+ const inp=document.createElement('input');inp.type='file';inp.accept='.json';
+ inp.onchange=()=>{const fr=new FileReader();
+   fr.onload=()=>{try{const s=JSON.parse(fr.result);
+     if(s.role){role=s.role;$('role').value=role;}
+     if(s.core)core=s.core; if(s.domain)domain=s.domain;
+     if(s.gates)gatesState=s.gates; if(s.modifiers)modsState=s.modifiers;
+     render(); toast('Scenario imported');
+   }catch(e){toast('Invalid file');}};
+   fr.readAsText(inp.files[0]);};
+ inp.click();
+};
+
+render();
+</script>
+</body>
+</html>
