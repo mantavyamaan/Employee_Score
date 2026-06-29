@@ -1,4 +1,4 @@
-# Employee Score Model
+# Employee Scoring Model
 
 
 ## Overview
